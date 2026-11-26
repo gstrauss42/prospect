@@ -15,6 +15,7 @@ mod auth;
 mod config;
 mod conns;
 mod db;
+mod gate;
 mod http;
 mod mail;
 mod runs;
@@ -87,6 +88,7 @@ fn run(cfg: Config) -> Result<(), String> {
     move_legacy_db(&cfg.data_dir, &db_path);
     db::init(db_path).map_err(|e| format!("can't open the database: {e}"))?;
     runs::recover().map_err(|e| format!("can't recover runs: {e}"))?;
+    gate::init();
 
     let ai = deepseek::Config::from_env().map(deepseek::Client::new);
     if ai.is_none() {

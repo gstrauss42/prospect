@@ -32,6 +32,21 @@ const EMBEDDED: &[Asset] = &[
         bytes: include_bytes!("../../../web/app.css"),
     },
     Asset {
+        name: "padlock.css",
+        content_type: "text/css; charset=utf-8",
+        bytes: include_bytes!("../../../web/padlock.css"),
+    },
+    Asset {
+        name: "padlock.js",
+        content_type: "text/javascript; charset=utf-8",
+        bytes: include_bytes!("../../../web/padlock.js"),
+    },
+    Asset {
+        name: "admin.js",
+        content_type: "text/javascript; charset=utf-8",
+        bytes: include_bytes!("../../../web/admin.js"),
+    },
+    Asset {
         name: "favicon.svg",
         content_type: "image/svg+xml",
         bytes: include_bytes!("../../../web/favicon.svg"),
@@ -149,7 +164,7 @@ mod tests {
 
     #[test]
     fn embedded_files_present() {
-        assert_eq!(EMBEDDED.len(), 4);
+        assert_eq!(EMBEDDED.len(), 7);
         assert!(EMBEDDED.iter().all(|a| !a.bytes.is_empty()));
         assert_eq!(etag(b"x").len(), 22);
     }

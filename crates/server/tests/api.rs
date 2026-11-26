@@ -890,3 +890,111 @@ fn without_an_api_key_runs_fail_clearly() {
     assert_eq!(r.status, 503);
     assert_eq!(r.json()["error"]["code"], "ai_unavailable");
 }
+
+#[test]
+fn demo_padlock_blocks_everything_until_unlocked_and_the_flag_switches_it() {
+    let env = Env::start(&[
+        ("DEMO_PASSWORD", "open sesame"),
+        ("ADMIN_PASSWORD", "flag keeper"),
+    ]);
+    let mut c = env.client();
+    assert_eq!(c.get("/healthz").status, 200, "health checks stay open");
+    let page = c.get("/");
+    assert_eq!(page.status, 200);
+    assert!(page.text().contains("Private preview"));
+    assert!(
+        c.get("/app.js")
+            .header("content-type")
+            .unwrap_or("")
+            .starts_with("text/html"),
+        "the app's code isn't served while locked"
+    );
+    assert_eq!(c.get("/padlock.js").status, 200);
+    let api = c.get("/api/meta");
+    assert_eq!(api.status, 401);
+    assert_eq!(api.json()["error"]["code"], "locked");
+    assert_eq!(
+        c.post("/api/gate", &json!({ "password": "nope" })).status,
+        401
+    );
+    let right = c.post("/api/gate", &json!({ "password": "open sesame" }));
+    assert_eq!(right.status, 204);
+    let cookie = right
+        .header("set-cookie")
+        .unwrap()
+        .split(';')
+        .next()
+        .unwrap()
+        .to_string();
+    assert!(cookie.starts_with("prospect_gate="));
+    assert!(
+        c.request("GET", "/", &[("Cookie", &cookie)], None)
+            .text()
+            .contains("/app.js")
+    );
+    assert_eq!(
+        c.request("GET", "/api/meta", &[("Cookie", &cookie)], None)
+            .status,
+        200
+    );
+
+    // The hidden admin page switches the padlock off for everyone, and back on.
+    assert_eq!(c.get("/__admin").status, 200);
+    assert_eq!(
+        c.post("/__admin/flags", &json!({ "password": "wrong" }))
+            .status,
+        401
+    );
+    let state = c
+        .post("/__admin/flags", &json!({ "password": "flag keeper" }))
+        .json();
+    assert_eq!(state["padlock"], true);
+    let off = c
+        .post(
+            "/__admin/flags",
+            &json!({ "password": "flag keeper", "padlock": false }),
+        )
+        .json();
+    assert_eq!(off["padlock"], false);
+    let mut stranger = env.client();
+    assert!(
+        stranger.get("/").text().contains("/app.js"),
+        "no padlock once it's switched off"
+    );
+    assert_eq!(stranger.get("/api/meta").status, 200);
+    let stored: String = env
+        .db()
+        .query_row(
+            "SELECT value FROM meta WHERE key = 'flag:padlock'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(
+        stored, "off",
+        "the choice is stored, so it survives restarts"
+    );
+    c.post(
+        "/__admin/flags",
+        &json!({ "password": "flag keeper", "padlock": true }),
+    );
+    assert!(
+        stranger.get("/").text().contains("Private preview"),
+        "back on"
+    );
+}
+
+#[test]
+fn the_admin_page_does_not_exist_without_an_admin_password() {
+    let env = Env::start(&[("DEMO_PASSWORD", "open sesame")]);
+    let mut c = env.client();
+    assert_eq!(c.get("/__admin").status, 404);
+    assert_eq!(
+        c.post(
+            "/__admin/flags",
+            &json!({ "password": "x", "padlock": false })
+        )
+        .status,
+        404
+    );
+}

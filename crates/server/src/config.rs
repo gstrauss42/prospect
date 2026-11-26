@@ -15,6 +15,10 @@ pub struct Config {
     pub public_url: String,
     /// `DATA_DIR`: the database, theme images and the email outbox.
     pub data_dir: PathBuf,
+    /// `DEMO_PASSWORD`: when set, the demo padlock blocks everything until it is entered.
+    pub demo_password: Option<String>,
+    /// `ADMIN_PASSWORD`: unlocks the hidden feature-flag page at `/__admin`; without it the page doesn't exist.
+    pub admin_password: Option<String>,
     pub http_threads: usize,
     pub max_concurrent_runs: usize,
     pub daily_spend_limit_usd: f64,
@@ -41,6 +45,12 @@ impl Config {
             addr: var("ADDR").unwrap_or_else(|| "127.0.0.1:8080".into()),
             public_url,
             data_dir: PathBuf::from(var("DATA_DIR").unwrap_or_else(|| "./data".into())),
+            demo_password: var("DEMO_PASSWORD")
+                .map(|p| p.trim().to_string())
+                .filter(|p| !p.is_empty()),
+            admin_password: var("ADMIN_PASSWORD")
+                .map(|p| p.trim().to_string())
+                .filter(|p| !p.is_empty()),
             http_threads: parse("HTTP_THREADS", 8, |n: &usize| (1..=256).contains(n)),
             max_concurrent_runs: parse("MAX_CONCURRENT_RUNS", 2, |n: &usize| (1..=64).contains(n)),
             daily_spend_limit_usd: parse("DAILY_SPEND_LIMIT_USD", 1.0, |n: &f64| {

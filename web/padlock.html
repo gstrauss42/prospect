@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Prospect · Private preview</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/padlock.css">
+  <script type="module" src="/padlock.js"></script>
+</head>
+<body>
+  <main class="gate">
+    <p class="mark"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M17.56 7.14A9 9 0 1 0 24.86 14.44" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/><circle cx="22.4" cy="9.6" r="2.7"/></svg><span>Prospect</span></p>
+    <svg class="lock" viewBox="0 0 64 80" aria-hidden="true">
+      <path class="shackle" d="M18 38V25a14 14 0 0 1 28 0v13" fill="none" stroke-width="7" stroke-linecap="round"/>
+      <rect class="body" x="8" y="36" width="48" height="40" rx="10"/>
+      <circle class="hole" cx="32" cy="53" r="5"/>
+      <rect class="hole" x="30" y="55" width="4" height="10" rx="2"/>
+    </svg>
+    <h1>Private preview</h1>
+    <p class="lede">Enter the password you were given.</p>
+    <form id="gate" novalidate>
+      <label class="sr-only" for="pw">Password</label>
+      <input id="pw" name="password" type="password" autocomplete="current-password" placeholder="Password" required autofocus>
+      <button type="submit">Unlock</button>
+      <p id="msg" class="msg" role="alert"></p>
+    </form>
+  </main>
+</body>
+</html>

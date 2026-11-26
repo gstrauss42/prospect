@@ -518,6 +518,35 @@ fn dispatch(req: &Req) -> Resp {
     if req.path == "/healthz" {
         return finish(health(), false);
     }
+    if req.path == "/__admin" {
+        if req.method != "GET" {
+            return finish(Resp::error(&ApiError::method_not_allowed()), false);
+        }
+        return finish(crate::gate::admin_page(), true);
+    }
+    if req.path == "/__admin/flags" {
+        if req.method != "POST" {
+            return finish(Resp::error(&ApiError::method_not_allowed()), false);
+        }
+        if !csrf_ok(req) {
+            return finish(Resp::error(&ApiError::forbidden()), false);
+        }
+        return finish(crate::gate::admin_flags(req), false);
+    }
+    if req.path == "/api/gate" {
+        if req.method != "POST" {
+            return finish(Resp::error(&ApiError::method_not_allowed()), false);
+        }
+        if !csrf_ok(req) {
+            return finish(Resp::error(&ApiError::forbidden()), false);
+        }
+        return finish(crate::gate::unlock(req), false);
+    }
+    if !crate::gate::open(&req.path) && !crate::gate::unlocked(req) {
+        let resp = crate::gate::locked(req);
+        let html = resp.content_type.starts_with("text/html");
+        return finish(resp, html);
+    }
     if req.path == "/api" || req.path.starts_with("/api/") {
         if matches!(req.method.as_str(), "POST" | "PUT" | "DELETE" | "PATCH") && !csrf_ok(req) {
             return finish(Resp::error(&ApiError::forbidden()), false);

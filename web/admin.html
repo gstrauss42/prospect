@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Prospect · Admin</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/padlock.css">
+  <script type="module" src="/admin.js"></script>
+</head>
+<body>
+  <main class="gate">
+    <p class="mark"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M17.56 7.14A9 9 0 1 0 24.86 14.44" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/><circle cx="22.4" cy="9.6" r="2.7"/></svg><span>Prospect</span></p>
+    <h1>Feature flags</h1>
+    <p class="lede">Enter the admin password to see and change them.</p>
+    <form id="auth" novalidate>
+      <label class="sr-only" for="pw">Admin password</label>
+      <input id="pw" name="password" type="password" autocomplete="current-password" placeholder="Admin password" required autofocus>
+      <button type="submit">Continue</button>
+    </form>
+    <section id="flags" class="state" hidden>
+      <p><b>Demo padlock</b> is <b id="status">…</b>.</p>
+      <p id="note"></p>
+      <div class="row">
+        <button type="button" id="on">Turn on</button>
+        <button type="button" id="off" class="ghost">Turn off</button>
+      </div>
+    </section>
+    <p id="msg" class="msg" role="alert"></p>
+  </main>
+</body>
+</html>
