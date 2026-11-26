@@ -1,0 +1,27 @@
+# Render Blueprint: in the Render dashboard choose New > Blueprint and pick this repository.
+# The disk keeps the database, theme photos and the secrets key across deploys (disks need a
+# paid instance type). PORT and the public URL come from Render automatically.
+services:
+  - type: web
+    name: prospect
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /healthz
+    disk:
+      name: prospect-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: DATA_DIR
+        value: /data
+      - key: TRUST_PROXY
+        value: "true"
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: MAILGUN_API_KEY
+        sync: false
+      - key: MAILGUN_DOMAIN
+        sync: false
+      - key: MAILGUN_SENDER_EMAIL
+        sync: false

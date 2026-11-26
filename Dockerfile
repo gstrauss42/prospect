@@ -1,19 +1,19 @@
-# Prospect: one small binary on a minimal base image.
+# Prospect: one small binary on a minimal base image, for Render or any Docker host.
 #   docker build -t prospect .
 #   docker run -p 8080:8080 -v prospect-data:/data --env-file .env prospect
-# (Not built in the original development environment, where Docker wasn't enabled for WSL.)
 
 FROM rust:1-slim-bookworm AS build
 WORKDIR /src
 COPY . .
+# Thin LTO and parallel codegen: a quicker build that fits in hosted builders' memory.
+ENV CARGO_PROFILE_RELEASE_LTO=thin CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16
 RUN cargo build --release --locked -p server && mkdir -p /data-empty
 
-# distroless/cc: glibc, libgcc and CA certificates only, no shell, runs as non-root (65532).
-FROM gcr.io/distroless/cc-debian12:nonroot
+# distroless/cc: glibc, libgcc and CA certificates only; no shell or package manager.
+FROM gcr.io/distroless/cc-debian12
 COPY --from=build /src/target/release/prospect /prospect
-# A data directory the non-root user owns; a new named volume inherits this ownership.
-COPY --from=build --chown=65532:65532 /data-empty /data
-ENV ADDR=0.0.0.0:8080 DATA_DIR=/data
-VOLUME ["/data"]
+COPY --from=build /data-empty /data
+# Render sets PORT itself; DATA_DIR should be a persistent disk (database, photos, secrets key).
+ENV PORT=8080 DATA_DIR=/data
 EXPOSE 8080
 ENTRYPOINT ["/prospect"]

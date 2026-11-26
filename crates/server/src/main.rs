@@ -63,6 +63,7 @@ impl App {
 fn main() {
     // Real environment variables win over the .env file; this runs before any thread exists.
     let loaded = config::load_dotenv(Path::new(".env"));
+    platform_env();
     let cfg = Config::from_env();
     util::set_debug(cfg.debug);
     sys::tune_malloc();
@@ -182,4 +183,29 @@ fn move_legacy_db(dir: &Path, new: &Path) {
         }
     }
     info!("moved the database from opportunity.db to prospect.db");
+}
+
+/// Hosting platforms such as Render assign the port (`PORT`) and publish the service's address
+/// (`RENDER_EXTERNAL_URL`). Use them when `ADDR` and `PUBLIC_URL` aren't set explicitly, so the
+/// container needs no extra configuration. Runs during start-up, before any thread exists.
+fn platform_env() {
+    let unset = |k: &str| {
+        std::env::var(k)
+            .map(|v| v.trim().is_empty())
+            .unwrap_or(true)
+    };
+    if unset("ADDR")
+        && let Ok(port) = std::env::var("PORT")
+        && !port.trim().is_empty()
+    {
+        // SAFETY: single-threaded start-up, as for the .env loader.
+        unsafe { std::env::set_var("ADDR", format!("0.0.0.0:{}", port.trim())) };
+    }
+    if unset("PUBLIC_URL")
+        && let Ok(url) = std::env::var("RENDER_EXTERNAL_URL")
+        && !url.trim().is_empty()
+    {
+        // SAFETY: as above.
+        unsafe { std::env::set_var("PUBLIC_URL", url.trim()) };
+    }
 }
