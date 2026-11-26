@@ -851,9 +851,17 @@ function SourceLink(src) {
 const srcFoot = (src) => { const l = SourceLink(src); return l ? h('footer', { class: 'icard-foot' }, l) : null; };
 const pill = (text, kind) => h('span', { class: `pill pill-${kind}`, text });
 
+const INTEL_EMPTY = { competitors: 'competitors', trends: 'market trends', regulation: 'regulation changes', news: 'news' };
 function IntelPanel(tab) {
+  const intel = S.me.intel || {};
   const panels = { competitors: CompetitorsPanel, trends: MarketPanel, regulation: RegulationPanel, news: NewsPanel };
-  return panels[tab] ? panels[tab](S.me.intel || {}) : null;
+  const def = INTEL_TABS.find(([id]) => id === tab);
+  if (def && !def[2](intel)) {
+    return h('div', { class: 'state intel-empty' }, h('div', { class: 'state-icon' }, icon('search')),
+      h('h2', { class: 'h2', text: `No sourced ${INTEL_EMPTY[tab]} yet` }),
+      h('p', { text: 'Prospect only shows what it can link to a source, so this stays empty rather than guessing. Refresh intelligence to look again; a fuller business profile helps.' }));
+  }
+  return panels[tab] ? panels[tab](intel) : null;
 }
 const OVERLAP = { high: ['High overlap', 'hi', 0], medium: ['Medium overlap', 'mid', 1], low: ['Low overlap', 'lo', 2] };
 function Bullseye(comps) {
@@ -996,9 +1004,8 @@ function agentAction(item) {
 }
 function AgentButton(item) {
   const [label, does] = agentAction(item);
-  const hintId = `agent-${item.id}`;
   const text = h('span', { class: 'agent-label', text: label });
-  const btn = h('button', { type: 'button', class: 'agent-btn', 'data-action': 'agent', 'aria-describedby': hintId }, icon('spark'), text);
+  const btn = h('button', { type: 'button', class: 'agent-btn', 'data-action': 'agent', 'data-tip': 'Prospect’s AI agent does this for you' }, icon('spark'), text);
   let timer = 0;
   btn.addEventListener('click', () => {
     const title = item.title.length > 70 ? `${item.title.slice(0, 69).trimEnd()}…` : item.title;
@@ -1011,7 +1018,7 @@ function AgentButton(item) {
     clearTimeout(timer);
     timer = setTimeout(() => { btn.classList.remove('is-denied'); btn.firstChild.replaceWith(icon('spark')); text.textContent = label; }, 2600);
   });
-  return h('div', { class: 'agent' }, btn, h('span', { class: 'agent-hint', id: hintId, text: 'AI agent · does it all for you' }));
+  return btn;
 }
 
 /* ------------------------------------------------------------------ AI model + connectors */
@@ -1293,7 +1300,7 @@ function DashboardScreen() {
 
   function renderTabs() {
     const intel = S.me.intel || {};
-    const avail = [['opportunities', 'Opportunities', S.items.length], ...INTEL_TABS.map(([id, label, n]) => [id, label, n(intel)]).filter(([, , n]) => n)];
+    const avail = [['opportunities', 'Opportunities', S.items.length], ...INTEL_TABS.map(([id, label, n]) => [id, label, n(intel)])];
     if (!avail.some(([id]) => id === S.tab)) {
       // An old link to a tab that's gone (or empty) lands on the opportunities.
       if (S.tab !== 'opportunities' && new URLSearchParams(location.search).has('tab')) history.replaceState(null, '', '/');
@@ -1302,9 +1309,9 @@ function DashboardScreen() {
     tabsEl.replaceChildren(...avail.map(([id, label, n]) => {
       const sel = S.tab === id;
       return h('button', { type: 'button', role: 'tab', class: 'tab', id: 'tab-' + id, 'aria-selected': String(sel), tabindex: sel ? '0' : '-1', on: { click: () => setTab(id) } },
-        label, h('span', { class: 'count', text: String(n) }));
+        label, id === 'opportunities' || n ? h('span', { class: 'count', text: String(n) }) : null);
     }));
-    tabsEl.hidden = avail.length < 2;
+    tabsEl.hidden = false;
   }
   function setTab(id) {
     if (S.tab === id) return;
@@ -1599,8 +1606,7 @@ function DashboardScreen() {
           item.summary ? h('p', { class: 'card-summary', text: item.summary }) : null),
         h('div', { class: 'card-aside' },
           item.why ? h('p', { class: 'card-why' }, h('span', { class: 'sr-only', text: 'Why it fits you: ' }), item.why) : null,
-          item.action ? h('p', { class: 'card-next' }, h('span', { class: 'card-next-label', text: 'Next step' }), h('span', { text: item.action })) : null,
-          AgentButton(item))),
+          item.action ? h('p', { class: 'card-next' }, h('span', { class: 'card-next-label', text: 'Next step' }), h('span', { text: item.action })) : null)),
       h('div', { class: 'facts' },
         h('span', { class: 'fact' + (dl && dl.level ? ' is-' + dl.level : ''), title: dl ? dl.date : null }, icon(dl ? 'clock' : 'calendar'),
           h('span', { text: dl ? dl.text : 'No deadline listed' })),
@@ -1612,7 +1618,8 @@ function DashboardScreen() {
           fit === 3 ? 'Strong fit' : 'Good fit') : null,
         h('div', { class: 'votes', role: 'group', 'aria-label': 'Rate this suggestion' },
           iconBtn('up', 'up', 'More like this', item.vote === 1, () => vote(item, 1)),
-          iconBtn('down', 'down', 'Less like this', item.vote === -1, () => vote(item, -1)))));
+          iconBtn('down', 'down', 'Less like this', item.vote === -1, () => vote(item, -1))),
+        AgentButton(item)));
     if (doc.startViewTransition) el.style.setProperty('view-transition-name', tid);
     return el;
   }
@@ -1742,8 +1749,9 @@ function openSettings() {
     return h('label', { class: 'radio' }, input, h('span', { text: fq.label }));
   }));
   const mailFlag = flag();
-  const digest = h('input', { type: 'checkbox', role: 'switch', checked: !!me.settings.email_digest, id: uid('sw') });
-  digest.addEventListener('change', () => save({ email_digest: digest.checked }, mailFlag, () => { digest.checked = !digest.checked; }));
+  // Email digests are restricted in the demo: the switch stays off and says so, like the agent buttons.
+  const digest = h('input', { type: 'checkbox', role: 'switch', checked: false, id: uid('sw') });
+  digest.addEventListener('click', (e) => { e.preventDefault(); toast('Restricted in demo. Email digests can’t be switched on here. Nothing was sent.'); });
 
   // Account forms, each tucked behind a link until needed.
   function Reveal(label, ic, build, danger) {
@@ -1819,7 +1827,7 @@ function openSettings() {
       h('div', { class: 'label-row' }, h('h3', { class: 'set-title', text: 'Email' }), mailFlag),
       h('label', { class: 'switch', for: digest.id },
         h('span', { class: 'switch-text' }, h('b', { text: 'Email me new finds' }), h('span', { class: 'hint', text: 'A short digest when a refresh turns up something new.' })), digest),
-      M.email_live ? null : h('p', { class: 'set-note' }, icon('mail'), h('span', { text: 'Email isn’t switched on for this server yet, so nothing will actually be sent for now.' }))),
+      null),
     SHOW_MODEL_PICKER ? h('section', { class: 'set-section' },
       h('h3', { class: 'set-title', text: 'AI model' }),
       h('div', { class: 'set-model' }, h('div', null, h('b', { class: 'model-chip-label', text: modelLabel() }), h('p', { class: 'hint', text: 'Used for planning, judging and writing. Search always runs on DeepSeek.' })),
