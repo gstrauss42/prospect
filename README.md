@@ -29,7 +29,7 @@ Today's alternatives each cover one slice: tender alerts (tenders only, keyword 
 
 If a business-development lead spends three hours a week scanning for opportunities (our estimate), that is about 150 hours a year, and it still misses most of what's out there.
 
-What has changed is the cost of doing this continuously. In our runs, researching a business cost about US$0.015 and a full opportunity search about US$0.02–0.04 in AI usage, so a weekly refresh costs well under US$1 per business per month.
+What has changed is that AI models can now read websites and search results and turn them into sourced findings at a cost low enough to repeat every week. Based on the token usage in our test runs, a weekly refresh on a Claude Sonnet-class model should fit within US$10 per business per month (an estimate).
 
 ## Success
 
@@ -51,4 +51,4 @@ What has changed is the cost of doing this continuously. In our runs, researchin
 2. Prospect reads the website and searches the web for news, competitors, market trends and regulation. It builds a profile in which every fact has a source, and you check it and correct anything that's wrong.
 3. It searches for opportunities across sales, partnerships, funding, regulation, markets, events, talent and suppliers, confirms the best ones by reading their pages, and explains why each one fits. It repeats this weekly.
 
-The AI model is DeepSeek by default, or Claude on Amazon Bedrock using your own AWS account. Connections to internal tools are read-only, enforced at several independent levels ([architecture](docs/ARCHITECTURE.md)).
+It runs on Claude through Amazon Bedrock, in the customer's own AWS account.
