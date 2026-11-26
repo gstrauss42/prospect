@@ -58,3 +58,73 @@ What has changed is that AI models can now read websites and search results and 
 4. You tune it: mark items as useful or not, or add a note such as "more government tenders", and the next email and the dashboard change. Replying to the email to give feedback is next on the roadmap.
 
 It runs on Claude through Amazon Bedrock, in the customer's own AWS account.
+
+## Business case
+
+### Pricing
+
+Prospect is priced per business, per month. Refresh frequency is the upgrade lever because it drives both the value and the cost. We don't charge per opportunity, which would reward volume over relevance.
+
+| Plan | Price | Includes |
+|---|---|---|
+| Starter | R899 a month (about US$49) | weekly email and dashboard, all eight focus areas |
+| Growth | R2,699 a month (about US$149) | daily refresh, up to five email recipients, a monthly refresh of the research |
+| Enterprise | from R8,999 a month (about US$499) | runs on Claude in the customer's own AWS account (Amazon Bedrock), which pays its own AI usage |
+
+**Why these prices:** a business-development lead spends about 13 hours a month scanning for opportunities (three hours a week, our estimate above). At about R300 an hour that is R3,900 a month, and Starter costs 23% of it. For a US buyer at about US$70 an hour the same time is worth about US$910, and Growth costs 16% of it. One won contract more than pays for itself: a R200,000 contract at a 20% margin covers about three and a half years of Starter.
+
+All amounts use R18 = US$1.
+
+### Costs and unit economics
+
+Costs per business assume Claude Sonnet-class pricing (US$3 per million input tokens, US$15 per million output tokens) and US$0.01 per web search or page read. Token counts are estimated from the usage of our live runs.
+
+| Item | Assumption | Cost |
+|---|---|---|
+| One opportunity search | about 100,000 input and 15,000 output tokens, 30 searches and page reads | about US$0.83 |
+| Researching the business | about 60,000 input and 8,000 output tokens, 10 searches | about US$0.40 |
+| Starter, per month | 4.3 opportunity searches and one research refresh | about US$4 |
+| Growth, per month | 30 opportunity searches and one research refresh | about US$25 |
+
+Across the plan mix below, AI and search cost about US$9 per business per month. Payment processing (3%) adds about US$3 and support about US$5, so serving an average customer costs about US$17 against about US$97 of revenue: a **gross margin of about 82%**, and about US$79 a month towards fixed costs.
+
+Hosting and email cost about US$120 a month, and one small server handles well over 1,000 businesses on a weekly refresh. Ongoing development is costed as one full-time developer at about R55,000 (US$3,000) a month, so fixed costs are about **US$3,120 a month**.
+
+### Projections
+
+| Assumption | Value |
+|---|---|
+| Plan mix | 70% Starter, 25% Growth, 5% Enterprise, an average of about US$97 per customer per month |
+| Churn | 5% a month, so customers stay about 20 months |
+| Cost to win a customer | about US$300 (content, outreach through business associations, partner referrals) |
+| Free trial | 14 days, costing us about US$1.25; one in five trials converts |
+| Growth | 15 new paying customers a month from month 2 |
+| Sales cycle | self-serve within the trial for Starter and Growth; one to three months for Enterprise |
+
+That gives a lifetime value of about US$1,590 per customer, about **5.3 times** the cost of winning one, and that cost is earned back in about 4 months. Acquiring 15 customers a month costs US$4,500, so while growing at that rate the business **breaks even at about 96 paying businesses, in month 9**, and needs about **US$31,000** to get there.
+
+| Month | Paying businesses | Revenue per month | Profit per month |
+|---|---|---|---|
+| 3 | 29 | US$2,800 | −US$5,300 |
+| 6 | 68 | US$6,500 | −US$2,200 |
+| 9 | 101 | US$9,700 | +US$400 |
+| 12 | 129 | US$12,500 | +US$2,700 |
+
+### Risks and sensitivity
+
+| Scenario | What changes | Break-even |
+|---|---|---|
+| Base case | as above | about 96 businesses, month 9 |
+| AI costs double | AI and search cost about US$18 per business | about 108 businesses |
+| Prices 30% lower | average revenue about US$68 | about 148 businesses |
+| Twice the cost to win a customer | US$600 per customer | about 153 businesses |
+| Relevance below target | churn rises to 8%, lifetime value falls to about US$990 | about 96 businesses, a month later |
+| All four at once | | not reached at 15 new customers a month; needs about 23 |
+
+The risks behind these scenarios, and what limits them:
+
+- **Relevance and trust.** If fewer than half the opportunities are worth pursuing, churn rises and the business stays small. Prospect reads the top pages to confirm opportunities are open, links every item to its source and learns from feedback, and the pilot measures relevance before acquisition spending grows.
+- **Willingness to pay.** A 30% lower price is the biggest single swing. The pilot tests the prices before they're used to plan spending.
+- **AI pricing.** Doubling model costs moves break-even by about 12 businesses. Smaller models can handle the planning steps, and Enterprise customers bring their own AWS account.
+- **Access to sources.** Websites can block automated reading. Prospect draws on many sources, so losing one has little effect.
+- **Data protection (POPIA and GDPR).** Prospect researches public information only.
