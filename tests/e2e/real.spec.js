@@ -150,7 +150,19 @@ test('steering notes, settings and the business profile persist', async ({ page 
   await idle(page);
 });
 
-test('model selector: DeepSeek V4 Pro, then Claude on Bedrock with validation, a real test call and a masked key', async ({ page }) => {
+test('the AI model is never shown: no picker in the header or Settings', async ({ page }) => {
+  await onboard(page, 'Quiet Model Co');
+  await page.goto('/');
+  await expect(page.locator('.card').first()).toBeVisible();
+  await expect(page.locator('.model-chip')).toHaveCount(0);
+  await expect(page.locator('body')).not.toContainText(/DeepSeek|Bedrock|AI model/);
+  await page.goto('/settings');
+  await expect(page.locator('dialog.drawer')).toBeVisible();
+  await expect(page.locator('body')).not.toContainText(/DeepSeek|Bedrock|AI model/);
+});
+
+// The picker is hidden (SHOW_MODEL_PICKER in web/app.js); this runs again when it's shown.
+test.skip('model selector: DeepSeek V4 Pro, then Claude on Bedrock with validation, a real test call and a masked key', async ({ page }) => {
   await onboard(page, 'Model Test Co');
   await page.goto('/');
   const chip = page.locator('.model-chip');
@@ -222,7 +234,7 @@ test('refresh opportunities and refresh intelligence run to completion', async (
   await expect(page.locator('.refresh-bar')).toBeVisible();
   await expect(page.locator('.refresh-bar')).toHaveCount(0, { timeout: 90_000 });
   await expect(page.locator('.card').first()).toBeVisible();
-  await page.goto('/?tab=overview');
+  await page.goto('/?tab=competitors');
   await page.getByRole('button', { name: 'Refresh intelligence' }).click();
   await expect(page.getByText('Intelligence updated')).toBeVisible({ timeout: 90_000 });
 });

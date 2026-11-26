@@ -210,7 +210,19 @@ test.describe('signed in', () => {
     await expect(page.getByText(/Saved\./)).toBeVisible();
   });
 
-  test('AI model selector: DeepSeek, then Bedrock with validation, key hint and test', async ({ page }) => {
+  test('no AI model picker or model name anywhere: the header and Settings', async ({ page }) => {
+    await seed(page, 'dashboard');
+    await page.goto('/');
+    await expect(page.locator('.card').first()).toBeVisible();
+    await expect(page.locator('.model-chip')).toHaveCount(0);
+    await expect(page.locator('body')).not.toContainText(/DeepSeek|Bedrock|AI model/);
+    await page.goto('/settings');
+    await expect(page.locator('dialog.drawer')).toBeVisible();
+    await expect(page.locator('body')).not.toContainText(/DeepSeek|Bedrock|AI model/);
+  });
+
+  // The picker is hidden (SHOW_MODEL_PICKER in web/app.js); this runs again when it's shown.
+  test.skip('AI model selector: DeepSeek, then Bedrock with validation, key hint and test', async ({ page }) => {
     await seed(page, 'dashboard');
     await page.goto('/');
     const chip = page.locator('.model-chip');

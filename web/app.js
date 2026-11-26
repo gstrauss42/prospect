@@ -951,6 +951,9 @@ function NewsPanel(intel) {
 }
 
 /* ------------------------------------------------------------------ AI model + connectors */
+// The AI model picker is hidden: runs use the server's default model, and nothing in the UI names
+// it. The code stays; set this to true to show the picker again (header and Settings).
+const SHOW_MODEL_PICKER = false;
 
 function modelLabel(ai) {
   ai = ai || (S.me && S.me.ai) || {};
@@ -1147,7 +1150,7 @@ function DashboardScreen() {
   const stage = h('div', { class: 'hero-stage' }, h('p', { class: 'eyebrow', text: 'Prospecting' }), board.el, stageTitle, feed.el, meter.el,
     h('p', { class: 'stage-foot', text: 'This usually takes a minute or two. You can close this tab; we’ll keep going.' }));
   const credit = h('a', { class: 'credit', target: '_blank', rel: 'noopener noreferrer', hidden: true });
-  const hero = h('header', { class: 'hero on-dark' }, media.el, h('div', { class: 'appbar wrap' }, Wordmark(), h('div', { class: 'appbar-actions' }, modelChip, avatar)), heroInner, stage, credit);
+  const hero = h('header', { class: 'hero on-dark' }, media.el, h('div', { class: 'appbar wrap' }, Wordmark(), h('div', { class: 'appbar-actions' }, SHOW_MODEL_PICKER ? modelChip : null, avatar)), heroInner, stage, credit);
 
   const viewAll = h('button', { type: 'button', 'aria-pressed': 'true', on: { click: () => setView('all') } }, 'For you', h('span', { class: 'count' }));
   const viewSaved = h('button', { type: 'button', 'aria-pressed': 'false', on: { click: () => setView('saved') } }, 'Saved', h('span', { class: 'count' }));
@@ -1755,10 +1758,10 @@ function openSettings() {
       h('label', { class: 'switch', for: digest.id },
         h('span', { class: 'switch-text' }, h('b', { text: 'Email me new finds' }), h('span', { class: 'hint', text: 'A short digest when a refresh turns up something new.' })), digest),
       M.email_live ? null : h('p', { class: 'set-note' }, icon('mail'), h('span', { text: 'Email isn’t switched on for this server yet, so nothing will actually be sent for now.' }))),
-    h('section', { class: 'set-section' },
+    SHOW_MODEL_PICKER ? h('section', { class: 'set-section' },
       h('h3', { class: 'set-title', text: 'AI model' }),
       h('div', { class: 'set-model' }, h('div', null, h('b', { class: 'model-chip-label', text: modelLabel() }), h('p', { class: 'hint', text: 'Used for planning, judging and writing. Search always runs on DeepSeek.' })),
-        Btn('Change', { kind: 'secondary', small: true, onClick: openModelPanel }))),
+        Btn('Change', { kind: 'secondary', small: true, onClick: openModelPanel }))) : null,
     ConnectorsSection(),
     h('section', { class: 'set-section' },
       h('h3', { class: 'set-title', text: 'Your page' }),
