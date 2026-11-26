@@ -210,4 +210,19 @@ fn platform_env() {
         // SAFETY: as above.
         unsafe { std::env::set_var("PUBLIC_URL", url.trim()) };
     }
+    // Render: every request comes through Cloudflare and then Render's own proxy, each adding
+    // an X-Forwarded-For entry, and Cloudflare sets CF-Connecting-IP to the visitor's address.
+    // Without these, every visitor looks like a Cloudflare server and shares its rate limits.
+    if std::env::var("RENDER").is_ok_and(|v| v.trim().eq_ignore_ascii_case("true")) {
+        for (key, value) in [
+            ("TRUST_PROXY", "true"),
+            ("TRUST_PROXY_HOPS", "2"),
+            ("CLIENT_IP_HEADER", "CF-Connecting-IP"),
+        ] {
+            if unset(key) {
+                // SAFETY: as above.
+                unsafe { std::env::set_var(key, value) };
+            }
+        }
+    }
 }

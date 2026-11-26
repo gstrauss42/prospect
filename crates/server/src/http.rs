@@ -56,7 +56,7 @@ pub struct Req {
     /// Lower-case names.
     pub headers: Vec<(String, String)>,
     pub body: Vec<u8>,
-    /// The client address (`X-Forwarded-For` when `TRUST_PROXY` is on).
+    /// The client address (from the proxy headers when `TRUST_PROXY` is on).
     pub ip: Option<IpAddr>,
 }
 
@@ -616,19 +616,132 @@ fn csrf_ok(req: &Req) -> bool {
     hosts.iter().any(|h| h.eq_ignore_ascii_case(authority))
 }
 
-/// The client address: the last `X-Forwarded-For` entry (the one our proxy added) when
-/// `TRUST_PROXY` is on, else the socket peer.
+/// The client address (see [`forwarded_client`]).
 fn client_ip(peer: Option<IpAddr>, headers: &[(String, String)]) -> Option<IpAddr> {
-    if app().cfg.trust_proxy {
-        let forwarded = headers
-            .iter()
-            .filter(|(k, _)| k == "x-forwarded-for")
-            .flat_map(|(_, v)| v.split(','))
-            .filter_map(crate::util::parse_forwarded_ip)
-            .next_back();
-        if forwarded.is_some() {
-            return forwarded;
-        }
+    let cfg = &app().cfg;
+    forwarded_client(
+        peer,
+        headers,
+        cfg.trust_proxy,
+        cfg.trust_proxy_hops,
+        cfg.client_ip_header.as_deref(),
+    )
+}
+
+/// The client address. With `trust` (`TRUST_PROXY`) on: the edge's own client header when it's
+/// configured and present (`CLIENT_IP_HEADER`, such as Cloudflare's `CF-Connecting-IP`), else the
+/// `X-Forwarded-For` entry `hops` from the right (the one the outermost trusted proxy added;
+/// entries further left can be forged by the visitor). Otherwise the socket peer.
+fn forwarded_client(
+    peer: Option<IpAddr>,
+    headers: &[(String, String)],
+    trust: bool,
+    hops: usize,
+    client_header: Option<&str>,
+) -> Option<IpAddr> {
+    if !trust {
+        return peer;
     }
-    peer
+    if let Some(name) = client_header
+        && let Some(ip) = headers
+            .iter()
+            .find(|(k, _)| k == name)
+            .and_then(|(_, v)| crate::util::parse_forwarded_ip(v))
+    {
+        return Some(ip);
+    }
+    let chain: Vec<IpAddr> = headers
+        .iter()
+        .filter(|(k, _)| k == "x-forwarded-for")
+        .flat_map(|(_, v)| v.split(','))
+        .filter_map(crate::util::parse_forwarded_ip)
+        .collect();
+    if chain.is_empty() {
+        return peer;
+    }
+    Some(chain[chain.len().saturating_sub(hops.max(1))])
+}
+
+#[cfg(test)]
+mod client_ip_tests {
+    use super::forwarded_client;
+    use std::net::IpAddr;
+
+    fn ip(s: &str) -> Option<IpAddr> {
+        Some(s.parse().unwrap())
+    }
+    fn h(pairs: &[(&str, &str)]) -> Vec<(String, String)> {
+        pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect()
+    }
+
+    #[test]
+    fn without_trust_the_socket_peer_is_the_client() {
+        let headers = h(&[
+            ("x-forwarded-for", "1.2.3.4"),
+            ("cf-connecting-ip", "5.6.7.8"),
+        ]);
+        assert_eq!(
+            forwarded_client(ip("10.0.0.1"), &headers, false, 2, Some("cf-connecting-ip")),
+            ip("10.0.0.1")
+        );
+    }
+
+    #[test]
+    fn one_proxy_means_the_last_entry() {
+        let headers = h(&[("x-forwarded-for", "9.9.9.9, 81.2.70.4")]);
+        assert_eq!(
+            forwarded_client(ip("10.0.0.1"), &headers, true, 1, None),
+            ip("81.2.70.4")
+        );
+    }
+
+    #[test]
+    fn behind_cloudflare_and_render_the_visitor_is_second_from_the_right_and_forgery_doesnt_help() {
+        // A visitor's forged entry, then the visitor (added by Cloudflare), then the Cloudflare
+        // server (added by Render's proxy).
+        let headers = h(&[("x-forwarded-for", "6.6.6.6, 81.2.70.4, 172.68.193.161")]);
+        assert_eq!(
+            forwarded_client(ip("10.0.0.1"), &headers, true, 2, None),
+            ip("81.2.70.4")
+        );
+        // Fewer entries than hops: the leftmost one is the best there is.
+        let short = h(&[("x-forwarded-for", "81.2.70.4")]);
+        assert_eq!(
+            forwarded_client(ip("10.0.0.1"), &short, true, 2, None),
+            ip("81.2.70.4")
+        );
+    }
+
+    #[test]
+    fn the_edge_client_header_wins_when_configured_and_valid() {
+        let headers = h(&[
+            ("x-forwarded-for", "81.2.70.4, 172.68.193.161"),
+            ("cf-connecting-ip", "2001:db8::7"),
+        ]);
+        assert_eq!(
+            forwarded_client(ip("10.0.0.1"), &headers, true, 2, Some("cf-connecting-ip")),
+            ip("2001:db8::7")
+        );
+        // Not configured: ignored, however it's set.
+        assert_eq!(
+            forwarded_client(ip("10.0.0.1"), &headers, true, 2, None),
+            ip("81.2.70.4")
+        );
+        // Configured but garbage or missing: X-Forwarded-For, then the peer.
+        let junk = h(&[
+            ("x-forwarded-for", "81.2.70.4, 172.68.193.161"),
+            ("cf-connecting-ip", "not an ip"),
+        ]);
+        assert_eq!(
+            forwarded_client(ip("10.0.0.1"), &junk, true, 2, Some("cf-connecting-ip")),
+            ip("81.2.70.4")
+        );
+        assert_eq!(
+            forwarded_client(ip("10.0.0.1"), &[], true, 2, Some("cf-connecting-ip")),
+            ip("10.0.0.1")
+        );
+    }
 }

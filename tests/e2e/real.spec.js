@@ -73,6 +73,22 @@ test('sign up → live research → review with sources → opportunities and ev
   }
 });
 
+test('every opportunity has an AI agent button that is restricted in the demo and sends nothing', async ({ page }) => {
+  await onboard(page, 'Agent Test Co');
+  await page.goto('/');
+  const cards = page.locator('.card');
+  await expect(cards.first()).toBeVisible();
+  await expect(page.locator('.card [data-action="agent"]')).toHaveCount(await cards.count());
+  const btn = page.locator('.card [data-action="agent"]').first();
+  await expect(btn).toHaveText(/^(Prepare my bid|Book my stand|Enter me|Register me|Book it for me|Apply for me|Draft my comments|Reply for me|Send it for me|Reach out for me|Get me quotes|Get me compliant|Draft it for me|Handle it for me)$/);
+  const writes = [];
+  page.on('request', (r) => { if (r.method() !== 'GET') writes.push(r.url()); });
+  await btn.click();
+  await expect(btn).toHaveText('Restricted in demo');
+  await expect(page.locator('#toasts')).toContainText('Restricted in demo. Prospect’s AI agent would');
+  expect(writes).toEqual([]);
+});
+
 test('sign out, wrong password, sign back in', async ({ page }) => {
   const { mail } = await onboard(page, 'Sign In Test Co');
   await page.goto('/');

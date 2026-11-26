@@ -956,6 +956,64 @@ function NewsPanel(intel) {
   }));
 }
 
+/* ------------------------------------------------------------------ AI agent actions */
+// Every opportunity offers what Prospect's AI agent would do with it ("Register me", "Apply for
+// me"), worked out from its next step, then its title, then its focus area. The agent itself isn't
+// part of this build: in the demo the button is a no-op that says it's restricted, and sends nothing.
+const AGENT = {
+  bid: ['Prepare my bid', (t) => `prepare and submit your bid for ${t}`],
+  stand: ['Book my stand', (t) => `book your stand at ${t}`],
+  enter: ['Enter me', (t) => `enter you for ${t}`],
+  register: ['Register me', (t) => `register you for ${t}`],
+  book: ['Book it for me', (t) => `make the booking for ${t}`],
+  apply: ['Apply for me', (t) => `apply for ${t} on your behalf`],
+  comment: ['Draft my comments', (t) => `draft and file your comments on ${t}`],
+  reply: ['Reply for me', (t) => `draft and send your reply about ${t}`],
+  send: ['Send it for me', (t) => `prepare and send what’s needed for ${t}`],
+  contact: ['Reach out for me', (t, org) => `contact ${org || 'them'} for you about ${t}`],
+  quotes: ['Get me quotes', (t) => `get you quotes for ${t}`],
+  comply: ['Get me compliant', (t) => `prepare what you need to comply with ${t}`],
+  draft: ['Draft it for me', (t) => `draft the work for ${t}`],
+  handle: ['Handle it for me', (t) => `take care of ${t} for you`],
+};
+const AGENT_RULES = [
+  [/tender|\bbids?\b|\brf[pqi]\b|request for (proposals|quotations)/i, 'bid'],
+  [/exhibit|\bbooth\b|\bstand\b/i, 'stand'],
+  [/nominat|\bentr(y|ies)\b|\benter\b/i, 'enter'],
+  [/regist|sign[ -]?up|\brsvp\b|\battend|\benrol|\btickets?\b/i, 'register'],
+  [/\bbook\b/i, 'book'],
+  [/\bappl(y|ication)|call for (proposals|applications)|expression of interest|\beoi\b/i, 'apply'],
+  [/\bcomment|consultation|submission/i, 'comment'],
+  [/\b(reply|respond)\b/i, 'reply'],
+  [/\bsend\b/i, 'send'],
+  [/contact|\be-?mail|reach out|\bcall\b|introduc|\bmeet|\bpitch|get in touch/i, 'contact'],
+  [/quot(e|ation)|supplier|vendor/i, 'quotes'],
+];
+const AGENT_BY_AREA = { sales: 'contact', partners: 'apply', funding: 'apply', regulation: 'comply', market: 'draft', visibility: 'register', talent: 'apply', operations: 'quotes' };
+function agentAction(item) {
+  const pick = (text) => (AGENT_RULES.find(([re]) => re.test(text || '')) || [])[1];
+  return AGENT[pick(item.action) || pick(item.title) || AGENT_BY_AREA[item.category] || 'handle'];
+}
+function AgentButton(item) {
+  const [label, does] = agentAction(item);
+  const hintId = `agent-${item.id}`;
+  const text = h('span', { class: 'agent-label', text: label });
+  const btn = h('button', { type: 'button', class: 'agent-btn', 'data-action': 'agent', 'aria-describedby': hintId }, icon('spark'), text);
+  let timer = 0;
+  btn.addEventListener('click', () => {
+    const title = item.title.length > 70 ? `${item.title.slice(0, 69).trimEnd()}…` : item.title;
+    toast(`Restricted in demo. Prospect’s AI agent would ${does(`“${title}”`, item.organization)} and handle the rest. Nothing was sent.`);
+    btn.classList.remove('is-denied');
+    void btn.offsetWidth; // restart the shake on repeat clicks
+    btn.classList.add('is-denied');
+    btn.firstChild.replaceWith(icon('lock'));
+    text.textContent = 'Restricted in demo';
+    clearTimeout(timer);
+    timer = setTimeout(() => { btn.classList.remove('is-denied'); btn.firstChild.replaceWith(icon('spark')); text.textContent = label; }, 2600);
+  });
+  return h('div', { class: 'agent' }, btn, h('span', { class: 'agent-hint', id: hintId, text: 'AI agent · does it all for you' }));
+}
+
 /* ------------------------------------------------------------------ AI model + connectors */
 
 function modelLabel(ai) {
@@ -1541,7 +1599,8 @@ function DashboardScreen() {
           item.summary ? h('p', { class: 'card-summary', text: item.summary }) : null),
         h('div', { class: 'card-aside' },
           item.why ? h('p', { class: 'card-why' }, h('span', { class: 'sr-only', text: 'Why it fits you: ' }), item.why) : null,
-          item.action ? h('p', { class: 'card-next' }, h('span', { class: 'card-next-label', text: 'Next step' }), h('span', { text: item.action })) : null)),
+          item.action ? h('p', { class: 'card-next' }, h('span', { class: 'card-next-label', text: 'Next step' }), h('span', { text: item.action })) : null,
+          AgentButton(item))),
       h('div', { class: 'facts' },
         h('span', { class: 'fact' + (dl && dl.level ? ' is-' + dl.level : ''), title: dl ? dl.date : null }, icon(dl ? 'clock' : 'calendar'),
           h('span', { text: dl ? dl.text : 'No deadline listed' })),

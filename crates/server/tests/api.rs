@@ -332,7 +332,7 @@ fn accounts_and_password_reset() {
 
 #[test]
 fn security_rules() {
-    let env = Env::start(&[]);
+    let env = Env::start(&[("LOGIN_LIMIT_PER_IP", "30")]);
     let mut c = env.client();
 
     // Auth required everywhere it should be.
@@ -434,7 +434,7 @@ fn security_rules() {
         400
     );
 
-    // Rate limit on sign-in, per IP, with Retry-After.
+    // Rate limit on sign-in, per IP (LOGIN_LIMIT_PER_IP, 30 in this test), with Retry-After.
     let mut attacker = env.client_from("203.0.113.77");
     let mut limited = None;
     for i in 0..40 {
@@ -795,6 +795,78 @@ fn crash_recovery_resumes_runs() {
     env.start_server();
     c.port = env.port;
     assert_eq!(c.get("/api/me").status, 200);
+}
+
+#[test]
+fn the_same_email_at_once_makes_one_account_and_a_room_on_one_network_can_all_sign_up() {
+    let env = Env::start(&[("HTTP_THREADS", "8")]);
+    let port = env.port;
+    // Ten signups with the same email at once, in different cases and with stray spaces.
+    let variants = [
+        "boss@acme.example",
+        "BOSS@acme.example",
+        " boss@ACME.example ",
+        "Boss@Acme.Example",
+    ];
+    let statuses: Vec<u16> = (0..10)
+        .map(|i| {
+            std::thread::spawn(move || {
+                let mut c = common::Client { port, cookie: None, ip: Some(format!("81.2.71.{i}")) };
+                c.post(
+                    "/api/auth/signup",
+                    &json!({ "business_name": "Acme", "website": "acme.example", "email": variants[i % 4], "password": "correct horse battery" }),
+                )
+                .status
+            })
+        })
+        .collect::<Vec<_>>()
+        .into_iter()
+        .map(|h| h.join().expect("no thread failed"))
+        .collect();
+    assert_eq!(
+        statuses.iter().filter(|&&s| s == 201).count(),
+        1,
+        "{statuses:?}"
+    );
+    assert_eq!(
+        statuses.iter().filter(|&&s| s == 409).count(),
+        9,
+        "{statuses:?}"
+    );
+    // It signs in however the email is typed.
+    let mut c = common::Client {
+        port,
+        cookie: None,
+        ip: Some("81.2.71.99".into()),
+    };
+    let r = c.post(
+        "/api/auth/login",
+        &json!({ "email": "  BOSS@acme.EXAMPLE ", "password": "correct horse battery" }),
+    );
+    assert_eq!(r.status, 200, "{}", r.text());
+    // Thirty people behind one network address (one Wi-Fi) all get in.
+    for i in 0..30 {
+        let mut c = common::Client {
+            port,
+            cookie: None,
+            ip: Some("81.2.72.1".into()),
+        };
+        signup(
+            &mut c,
+            "Harbour Freight",
+            &format!("person{i}@harbour.example"),
+        );
+    }
+    let users: i64 = env
+        .db()
+        .query_row("SELECT COUNT(*) FROM users", [], |r| r.get(0))
+        .unwrap();
+    assert_eq!(users, 31);
+    let log = env.log();
+    assert!(
+        !log.contains("database is locked") && !log.contains(" 500 "),
+        "{log}"
+    );
 }
 
 #[test]

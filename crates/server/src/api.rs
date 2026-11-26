@@ -306,7 +306,12 @@ fn signup(ctx: &mut Ctx) -> Result<Resp> {
             "Keep this under 300 characters.",
         ));
     }
-    limit(format!("signup:ip:{}", ctx.req.ip_key()), 20, 3600)?;
+    // Per network address: generous enough for a room of people on one Wi-Fi.
+    limit(
+        format!("signup:ip:{}", ctx.req.ip_key()),
+        app().cfg.signup_limit_per_ip,
+        3600,
+    )?;
     let c = db::conn()?;
     let taken = c
         .query_row("SELECT 1 FROM users WHERE email = ?1", [&email], |_| Ok(()))
@@ -366,7 +371,12 @@ fn login(ctx: &mut Ctx) -> Result<Resp> {
     if password.is_empty() {
         return Err(ApiError::validation("password", "Enter your password."));
     }
-    limit(format!("login:ip:{}", ctx.req.ip_key()), 30, 600)?;
+    // Per network address (a whole room can share one); per account it's 10 misses below.
+    limit(
+        format!("login:ip:{}", ctx.req.ip_key()),
+        app().cfg.login_limit_per_ip,
+        600,
+    )?;
     let email_key = format!("login:email:{}", email.to_lowercase());
     app()
         .limiter

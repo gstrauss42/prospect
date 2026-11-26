@@ -23,10 +23,21 @@ pub struct Config {
     pub max_concurrent_runs: usize,
     pub daily_spend_limit_usd: f64,
     pub manual_runs_per_day: i64,
+    /// `SIGNUP_LIMIT_PER_IP` (per hour) and `LOGIN_LIMIT_PER_IP` (per 10 minutes): generous, since
+    /// a room of people can share one network address. Per account, 10 wrong passwords lock.
+    pub signup_limit_per_ip: u32,
+    pub login_limit_per_ip: u32,
     pub default_frequency: Frequency,
     /// `TRUST_PROXY`: take the client IP from `X-Forwarded-For` (and the host from
     /// `X-Forwarded-Host` for the CSRF origin check).
     pub trust_proxy: bool,
+    /// `TRUST_PROXY_HOPS`: how many proxies in front each add an `X-Forwarded-For` entry; the
+    /// client is that many entries from the right (default 1; 2 on Render, behind Cloudflare).
+    pub trust_proxy_hops: usize,
+    /// `CLIENT_IP_HEADER`: a header the edge sets to the visitor's address, which visitors can't
+    /// forge (`CF-Connecting-IP` behind Cloudflare, the default on Render). Used first when
+    /// `TRUST_PROXY` is on. Stored lower-case.
+    pub client_ip_header: Option<String>,
     /// `WEB_DIR`: serve the web client from disk on every request (development).
     pub web_dir: Option<PathBuf>,
     /// `LOG=debug`.
@@ -52,11 +63,13 @@ impl Config {
                 .map(|p| p.trim().to_string())
                 .filter(|p| !p.is_empty()),
             http_threads: parse("HTTP_THREADS", 8, |n: &usize| (1..=256).contains(n)),
-            max_concurrent_runs: parse("MAX_CONCURRENT_RUNS", 2, |n: &usize| (1..=64).contains(n)),
-            daily_spend_limit_usd: parse("DAILY_SPEND_LIMIT_USD", 1.0, |n: &f64| {
+            max_concurrent_runs: parse("MAX_CONCURRENT_RUNS", 8, |n: &usize| (1..=64).contains(n)),
+            daily_spend_limit_usd: parse("DAILY_SPEND_LIMIT_USD", 10.0, |n: &f64| {
                 n.is_finite() && *n >= 0.0
             }),
             manual_runs_per_day: parse("MANUAL_RUNS_PER_DAY", 6, |n: &i64| *n >= 0),
+            signup_limit_per_ip: parse("SIGNUP_LIMIT_PER_IP", 100, |n: &u32| *n >= 1),
+            login_limit_per_ip: parse("LOGIN_LIMIT_PER_IP", 200, |n: &u32| *n >= 1),
             default_frequency: match var("DEFAULT_FREQUENCY") {
                 None => Frequency::Weekly,
                 Some(v) => Frequency::parse(&v).unwrap_or_else(|| {
@@ -65,6 +78,10 @@ impl Config {
                 }),
             },
             trust_proxy: flag("TRUST_PROXY"),
+            trust_proxy_hops: parse("TRUST_PROXY_HOPS", 1, |n: &usize| (1..=8).contains(n)),
+            client_ip_header: var("CLIENT_IP_HEADER")
+                .map(|h| h.trim().to_ascii_lowercase())
+                .filter(|h| !h.is_empty()),
             web_dir: var("WEB_DIR").map(PathBuf::from),
             debug: var("LOG").is_some_and(|v| v.eq_ignore_ascii_case("debug")),
             scheduler_tick: Duration::from_secs(parse("SCHEDULER_TICK_SECS", 30, |n: &u64| {

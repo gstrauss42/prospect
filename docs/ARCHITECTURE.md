@@ -70,7 +70,7 @@ One process:
   `recv()`. Every request is wrapped in `catch_unwind` so a panic answers 500 and the thread lives
   on. Request bodies are capped (64 KiB). Static files are embedded with `include_str!` (or read
   from `WEB_DIR` on every request in development, for live editing).
-* **Run workers**: `MAX_CONCURRENT_RUNS` threads (default 2) claim queued runs from SQLite and
+* **Run workers**: `MAX_CONCURRENT_RUNS` threads (default 8) claim queued runs from SQLite and
   execute them (discovery, research, theme). A run never blocks HTTP.
 * **Scheduler**: one thread, wakes every 30 s, enqueues discovery for users whose `next_run_at`
   has passed, sweeps expired sessions and reset tokens.
@@ -253,7 +253,7 @@ The run's stats record `new`, `refreshed`, `expired` and the engine/usage number
 * Discovery for `ready` users with `frequency != off` and `next_run_at <= now`; after scheduling,
   `next_run_at = now + interval`. Changing the frequency recomputes `next_run_at` from the last run.
 * **Daily spend guard**: if the sum of `cost_usd` over the last 24 h reaches
-  `DAILY_SPEND_LIMIT_USD` (default 1.00), new runs wait (scheduled ones are pushed back an hour,
+  `DAILY_SPEND_LIMIT_USD` (default 10.00), new runs wait (scheduled ones are pushed back an hour,
   manual ones fail fast with a clear message). Manual refreshes are limited per user per day
   (`MANUAL_RUNS_PER_DAY`, default 6); research runs to 3 per user per day.
 * Account-level DeepSeek errors (401, 402) fail the run with a plain message ("The AI service
@@ -304,11 +304,15 @@ The run's stats record `new`, `refreshed`, `expired` and the engine/usage number
 | `MAILGUN_BASE_URL` | US then EU | tests point it at the mock |
 | `OPENVERSE_URL`, `COMMONS_API_URL` | public APIs | tests point them at the mock |
 | `HTTP_THREADS` | `8` | HTTP worker threads |
-| `MAX_CONCURRENT_RUNS` | `2` | run worker threads |
-| `DAILY_SPEND_LIMIT_USD` | `1.00` | spend guard across all users |
+| `MAX_CONCURRENT_RUNS` | `8` | run worker threads |
+| `DAILY_SPEND_LIMIT_USD` | `10.00` | spend guard across all users |
+| `SIGNUP_LIMIT_PER_IP` | `100` | signups per network address per hour |
+| `LOGIN_LIMIT_PER_IP` | `200` | sign-in attempts per network address per 10 minutes (10 wrong passwords lock an account for 10 minutes) |
 | `MANUAL_RUNS_PER_DAY` | `6` | per-user manual refresh cap |
 | `DEFAULT_FREQUENCY` | `weekly` | for new accounts |
-| `TRUST_PROXY` | `false` | use `X-Forwarded-For` / `X-Forwarded-Proto` |
+| `TRUST_PROXY` | `false` (`true` on Render) | use `X-Forwarded-For` / `X-Forwarded-Proto` |
+| `TRUST_PROXY_HOPS` | `1` (`2` on Render) | proxies in front that each add an `X-Forwarded-For` entry |
+| `CLIENT_IP_HEADER` | unset (`CF-Connecting-IP` on Render) | edge header holding the visitor's address, used first |
 | `WEB_DIR` | — | serve the web client from disk (development) |
 | `LOG` | `info` | `debug` adds per-call AI logs |
 

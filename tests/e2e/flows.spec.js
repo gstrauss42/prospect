@@ -130,6 +130,33 @@ test.describe('signed in', () => {
     await expect(page.getByText('Intelligence updated')).toBeVisible({ timeout: 30_000 });
   });
 
+  test('each opportunity offers what the AI agent would do, restricted in the demo and sending nothing', async ({ page }) => {
+    await seed(page, 'dashboard');
+    await page.goto('/');
+    const cards = page.locator('.card');
+    await expect(cards.first()).toBeVisible();
+    await expect(page.locator('.card [data-action="agent"]')).toHaveCount(await cards.count());
+    // The label says what the agent would do, from the next step.
+    const agentFor = (next) => cards.filter({ hasText: next }).locator('[data-action="agent"]');
+    await expect(agentFor('Request the tender pack')).toHaveText('Prepare my bid');
+    await expect(agentFor('Apply online with a one-page plan')).toHaveText('Apply for me');
+    await expect(agentFor('Register as a host employer')).toHaveText('Register me');
+    await expect(agentFor('Book a subsidised stand')).toHaveText('Book my stand');
+    await expect(agentFor('Submit the entry form')).toHaveText('Enter me');
+    await expect(agentFor('Reply in the thread')).toHaveText('Reply for me');
+    await expect(agentFor('Audit your lunch menus')).toHaveText('Get me compliant');
+    // A click is a no-op that says so.
+    const writes = [];
+    page.on('request', (r) => { if (r.method() !== 'GET') writes.push(r.url()); });
+    const btn = agentFor('Request the tender pack');
+    await btn.click();
+    await expect(btn).toHaveText('Restricted in demo');
+    await expect(page.locator('#toasts')).toContainText('Restricted in demo. Prospect’s AI agent would prepare and submit your bid for “Catering partner wanted');
+    await expect(page.locator('#toasts')).toContainText('Nothing was sent.');
+    await expect(btn).toHaveText('Prepare my bid', { timeout: 6000 });
+    expect(writes).toEqual([]);
+  });
+
   test('filter by focus area, and badges for internal sources', async ({ page }) => {
     await seed(page, 'dashboard');
     await page.goto('/');
