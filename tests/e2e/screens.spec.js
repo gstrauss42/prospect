@@ -17,7 +17,7 @@ const SCREENS = {
   'refreshing': async (page) => { await seed(page, 'refreshing'); await page.goto('/'); await page.waitForSelector('.refresh-bar'); await toSheet(page); },
   'empty': async (page) => { await seed(page, 'empty'); await page.goto('/'); await page.waitForSelector('.state'); },
   'failed': async (page) => { await seed(page, 'failed'); await page.goto('/'); await page.waitForSelector('.state'); },
-  'settings': async (page) => { await seed(page, 'dashboard', { connections: true }); await page.goto('/settings'); await page.waitForSelector('.conn'); },
+  'settings': async (page) => { await seed(page, 'dashboard', { connections: true }); await page.goto('/settings'); await page.waitForSelector('dialog.drawer .set-section'); },
   // 'model' (the AI model picker) is hidden for now; see SHOW_MODEL_PICKER in web/app.js.
 };
 for (const tab of ['competitors', 'trends', 'regulation', 'news']) {

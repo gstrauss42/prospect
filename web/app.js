@@ -9,6 +9,12 @@ const $ = (sel, root = doc) => root.querySelector(sel);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+// Feature switches: hidden for now, with the code kept. Set one to true to show it again.
+// The AI model picker (header chip and Settings): runs use the server's default model, unnamed.
+const SHOW_MODEL_PICKER = false;
+// Connected tools (Slack, Microsoft 365, Confluence): the Settings section, the access log and
+// every mention in the copy.
+const SHOW_CONNECTORS = false;
 
 /* ------------------------------------------------------------------ DOM helpers */
 
@@ -599,7 +605,7 @@ function AuthScreen(mode) {
         h('p', { class: 'auth-statement', text: 'Prospect your market. Find the opportunities worth acting on.' }),
         board.el,
         h('p', { class: 'auth-caption', text: 'Give us your business name and website. We research your products, customers, competitors, market and regulation from public sources, then find the leads, partners, funding and openings worth acting on.' })),
-      h('p', { class: 'auth-foot', text: 'Every finding links to its source. Connected tools are read-only, always.' })),
+      h('p', { class: 'auth-foot', text: SHOW_CONNECTORS ? 'Every finding links to its source. Connected tools are read-only, always.' : 'Every finding links to its source.' })),
     panel);
   board.cycle(AUTH_WORDS, { every: 2300, end: 'PROSPECT' });
   const forms = { signin: SignInForm, signup: SignUpForm, forgot: ForgotForm, reset: ResetForm };
@@ -951,9 +957,6 @@ function NewsPanel(intel) {
 }
 
 /* ------------------------------------------------------------------ AI model + connectors */
-// The AI model picker is hidden: runs use the server's default model, and nothing in the UI names
-// it. The code stays; set this to true to show the picker again (header and Settings).
-const SHOW_MODEL_PICKER = false;
 
 function modelLabel(ai) {
   ai = ai || (S.me && S.me.ai) || {};
@@ -1163,7 +1166,7 @@ function DashboardScreen() {
   const stateSlot = h('div');
   const list = h('div', { class: 'list' });
   const foot = h('footer', { class: 'foot wrap' },
-    h('p', { text: 'Prospect researches public sources and the tools you connect, read-only. Every finding links to its source; check the details there before you act.' }),
+    h('p', { text: SHOW_CONNECTORS ? 'Prospect researches public sources and the tools you connect, read-only. Every finding links to its source; check the details there before you act.' : 'Prospect researches public sources. Every finding links to its source; check the details there before you act.' }),
     h('p', null, h('button', { type: 'button', text: 'Settings', on: { click: openSettings } }), ' · ', h('button', { type: 'button', text: 'Sign out', on: { click: signOut } })));
   const tabsEl = h('div', { class: 'tabs', role: 'tablist', 'aria-label': 'Sections' });
   const oppEl = h('div', { role: 'tabpanel', 'aria-labelledby': 'tab-opportunities' }, toolbar, chips, steerSlot, stateSlot, list);
@@ -1762,7 +1765,7 @@ function openSettings() {
       h('h3', { class: 'set-title', text: 'AI model' }),
       h('div', { class: 'set-model' }, h('div', null, h('b', { class: 'model-chip-label', text: modelLabel() }), h('p', { class: 'hint', text: 'Used for planning, judging and writing. Search always runs on DeepSeek.' })),
         Btn('Change', { kind: 'secondary', small: true, onClick: openModelPanel }))) : null,
-    ConnectorsSection(),
+    SHOW_CONNECTORS ? ConnectorsSection() : null,
     h('section', { class: 'set-section' },
       h('h3', { class: 'set-title', text: 'Your page' }),
       h('div', { class: 'set-links' }, editBtn, photoBtn)),
@@ -1782,6 +1785,7 @@ function connectorReturn() {
   if (ok == null && bad == null) return;
   qs.delete('connected'); qs.delete('connector_error');
   history.replaceState(null, '', location.pathname + (qs.toString() ? `?${qs}` : ''));
+  if (!SHOW_CONNECTORS) return;
   setTimeout(() => {
     if (bad != null) toast(`That connection didn’t go through: ${bad.slice(0, 240)}`, { error: true });
     else toast(`${CONN_LABEL[ok] || 'Your tool'} is connected. Access is read-only.`);

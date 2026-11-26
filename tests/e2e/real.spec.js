@@ -150,15 +150,16 @@ test('steering notes, settings and the business profile persist', async ({ page 
   await idle(page);
 });
 
-test('the AI model is never shown: no picker in the header or Settings', async ({ page }) => {
+test('neither the AI model nor connected tools are shown: header, page and Settings', async ({ page }) => {
   await onboard(page, 'Quiet Model Co');
   await page.goto('/');
   await expect(page.locator('.card').first()).toBeVisible();
   await expect(page.locator('.model-chip')).toHaveCount(0);
-  await expect(page.locator('body')).not.toContainText(/DeepSeek|Bedrock|AI model/);
+  await expect(page.locator('body')).not.toContainText(/DeepSeek|Bedrock|AI model|tools you connect/);
   await page.goto('/settings');
   await expect(page.locator('dialog.drawer')).toBeVisible();
-  await expect(page.locator('body')).not.toContainText(/DeepSeek|Bedrock|AI model/);
+  await expect(page.locator('dialog.drawer .conn')).toHaveCount(0);
+  await expect(page.locator('body')).not.toContainText(/DeepSeek|Bedrock|AI model|Connected tools|Access log|Slack|Confluence/);
 });
 
 // The picker is hidden (SHOW_MODEL_PICKER in web/app.js); this runs again when it's shown.
@@ -192,7 +193,8 @@ test.skip('model selector: DeepSeek V4 Pro, then Claude on Bedrock with validati
   expect(JSON.stringify(ai)).not.toContain('ABSKbW9jay1iZWRyb2NrLWFwaS1rZXk=');
 });
 
-test('connectors: Slack token (write tokens refused), Microsoft 365 OAuth, access log, internal opportunities, disconnect', async ({ page, request }) => {
+// Connectors are hidden (SHOW_CONNECTORS in web/app.js); this runs again when they're shown.
+test.skip('connectors: Slack token (write tokens refused), Microsoft 365 OAuth, access log, internal opportunities, disconnect', async ({ page, request }) => {
   await onboard(page, 'Connectors Test Co');
   await page.goto('/settings');
   const drawer = page.locator('dialog.drawer');

@@ -248,7 +248,23 @@ test.describe('signed in', () => {
     await expect(dlg.getByText('Saved: ••••7Q2c')).toBeVisible();
   });
 
-  test('connectors: Slack token, Microsoft sign-in, access log, disconnect', async ({ page }) => {
+  test('no connected tools anywhere: sign-in copy, the page footer, Settings and its access log', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('.auth-foot')).toHaveText('Every finding links to its source.');
+    await seed(page, 'dashboard');
+    await page.goto('/?connected=slack');
+    await expect(page.locator('.card').first()).toBeVisible();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.locator('body')).not.toContainText(/tools you connect|Connected tools|is connected/);
+    await page.goto('/settings');
+    const drawer = page.locator('dialog.drawer');
+    await expect(drawer).toBeVisible();
+    await expect(drawer.locator('.conn')).toHaveCount(0);
+    await expect(drawer).not.toContainText(/Connected tools|Access log|Slack|Confluence|Microsoft/);
+  });
+
+  // Connectors are hidden (SHOW_CONNECTORS in web/app.js); these run again when they're shown.
+  test.skip('connectors: Slack token, Microsoft sign-in, access log, disconnect', async ({ page }) => {
     await seed(page, 'dashboard');
     await page.goto('/settings');
     const drawer = page.locator('dialog.drawer');
@@ -271,7 +287,7 @@ test.describe('signed in', () => {
     await expect(page.locator('dialog.drawer .conn').filter({ hasText: 'Microsoft 365' }).getByRole('button', { name: 'Connect Microsoft 365' })).toBeVisible();
   });
 
-  test('a provider the administrator hasn’t enabled gets a calm line, not an error', async ({ page }) => {
+  test.skip('a provider the administrator hasn’t enabled gets a calm line, not an error', async ({ page }) => {
     await page.request.post('/__mock/next', { data: { microsoft_oauth: false } });
     try {
       await seed(page, 'dashboard');
@@ -282,7 +298,7 @@ test.describe('signed in', () => {
     }
   });
 
-  test('a connector error on return is shown', async ({ page }) => {
+  test.skip('a connector error on return is shown', async ({ page }) => {
     await seed(page, 'dashboard');
     await page.goto('/?connector_error=The%20sign-in%20was%20cancelled.');
     await expect(page.getByText('That connection didn’t go through: The sign-in was cancelled.')).toBeVisible();
