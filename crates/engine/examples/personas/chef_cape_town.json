@@ -1,0 +1,20 @@
+{
+  "about": "A chef and caterer in Cape Town wanting funding, competitions and clients (founder persona).",
+  "profile": {
+    "headline": "Chef and caterer starting a food business",
+    "stage": "founder",
+    "location": "Cape Town, South Africa",
+    "reach": "global",
+    "seeking": ["funding", "competitions", "clients"],
+    "interests": ["street food", "Cape Malay cuisine", "event catering"],
+    "skills": ["menu design", "catering for 200+ guests", "food costing"],
+    "goals": "Open a small restaurant within a year and win corporate catering contracts.",
+    "avoid": "Unpaid stages",
+    "languages": ["English", "Afrikaans"]
+  },
+  "steering": {
+    "notes": ["more catering contracts"],
+    "liked": ["Sanlam Small Business Grant"],
+    "disliked": ["Culinary school open day"]
+  }
+}

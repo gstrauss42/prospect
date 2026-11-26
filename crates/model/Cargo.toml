@@ -1,0 +1,10 @@
+[package]
+name = "model"
+description = "Shared types and small dependency-free utilities for Opportunity"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true

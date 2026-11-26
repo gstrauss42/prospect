@@ -1,0 +1,9 @@
+{
+  "about": "Research on a well-known public figure, to check high-confidence behaviour. The address is illustrative: only its domain is used.",
+  "research": {
+    "first_name": "Satya",
+    "last_name": "Nadella",
+    "email": "satya.nadella@microsoft.com",
+    "hints": ""
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "about": "A final-year student in Lagos wanting scholarships and internships (individual persona).",
+  "profile": {
+    "headline": "Final-year computer science student at the University of Lagos",
+    "stage": "student",
+    "organization": "University of Lagos",
+    "location": "Lagos, Nigeria",
+    "reach": "global",
+    "seeking": ["fellowships", "jobs", "competitions", "learning"],
+    "interests": ["software engineering", "machine learning", "fintech"],
+    "skills": ["Python", "JavaScript", "data analysis"],
+    "goals": "Win a fully funded master's scholarship abroad for 2027 and get a paid tech internship before graduating.",
+    "avoid": "Unpaid internships; anything that charges an application fee",
+    "languages": ["English"]
+  }
+}

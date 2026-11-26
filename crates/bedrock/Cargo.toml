@@ -1,0 +1,16 @@
+[package]
+name = "bedrock"
+description = "Claude on Amazon Bedrock (Converse API) as a deepseek::ChatBackend: Bedrock API keys or SigV4"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+ureq.workspace = true
+base64.workspace = true
+sha2.workspace = true
+hmac.workspace = true
+model.workspace = true
+deepseek.workspace = true

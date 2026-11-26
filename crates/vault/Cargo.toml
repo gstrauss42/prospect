@@ -1,0 +1,11 @@
+[package]
+name = "vault"
+description = "Secrets at rest: ChaCha20-Poly1305 with a 256-bit master key, bound to the record they belong to"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+chacha20poly1305.workspace = true
+getrandom.workspace = true
+base64.workspace = true

@@ -1,0 +1,15 @@
+{
+  "about": "A senior software engineer in Berlin wanting remote roles and speaking slots (individual persona).",
+  "profile": {
+    "headline": "Senior software engineer specialising in Rust and distributed systems",
+    "stage": "senior",
+    "location": "Berlin, Germany",
+    "reach": "global",
+    "seeking": ["jobs", "visibility", "events"],
+    "interests": ["Rust", "distributed systems", "databases", "open source"],
+    "skills": ["Rust", "Kubernetes", "PostgreSQL internals", "technical leadership"],
+    "goals": "Move to a fully remote staff-level role and give two conference talks in 2027.",
+    "avoid": "Crypto and gambling companies",
+    "languages": ["German", "English"]
+  }
+}

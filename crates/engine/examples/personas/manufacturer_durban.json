@@ -1,0 +1,17 @@
+{
+  "about": "A family-run manufacturing SME in South Africa (business persona).",
+  "profile": {
+    "headline": "Family-run steel fabrication and precision machining company with 45 staff, serving mining, sugar-milling and port customers",
+    "stage": "business",
+    "organization": "Khumalo Precision Engineering",
+    "location": "Durban, South Africa",
+    "reach": "country",
+    "seeking": ["clients", "funding", "partners", "events"],
+    "interests": ["steel fabrication", "precision machining", "industrial maintenance", "manufacturing"],
+    "skills": ["structural steel fabrication", "CNC machining", "plant maintenance contracts", "conveyor components"],
+    "goals": "Win more public and private maintenance tenders in KwaZulu-Natal and finance two new CNC machines.",
+    "avoid": "Tenders outside South Africa",
+    "links": ["https://www.khumaloprecision.example"],
+    "languages": ["English"]
+  }
+}

@@ -1,0 +1,13 @@
+[package]
+name = "imagery"
+description = "Finds an on-theme background photo (Openverse, Wikimedia Commons) and lets deepseek-flash pick the best"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+ureq.workspace = true
+model.workspace = true
+deepseek.workspace = true

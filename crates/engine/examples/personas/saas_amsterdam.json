@@ -1,0 +1,20 @@
+{
+  "about": "A B2B SaaS startup selling to European retailers (business persona).",
+  "profile": {
+    "headline": "B2B SaaS startup selling shelf-analytics software to European grocery and fashion retailers",
+    "stage": "founder",
+    "organization": "Shelfwise",
+    "location": "Amsterdam, Netherlands",
+    "reach": "global",
+    "seeking": ["clients", "investors", "partners", "events", "competitions"],
+    "interests": ["retail technology", "computer vision", "grocery retail", "omnichannel commerce"],
+    "skills": ["shelf analytics SaaS", "computer vision for stores", "retail data integration"],
+    "goals": "Land three more mid-size European retail chains as paying customers in 2027 and raise a Series A.",
+    "avoid": "Consumer apps; markets outside Europe",
+    "links": ["https://www.shelfwise-analytics.example"],
+    "languages": ["English", "Dutch"]
+  },
+  "steering": {
+    "notes": ["more pilot programmes run by retailers"]
+  }
+}

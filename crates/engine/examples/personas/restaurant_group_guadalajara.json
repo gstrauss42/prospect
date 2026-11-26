@@ -1,0 +1,16 @@
+{
+  "about": "A regional restaurant group in Mexico, working in Spanish (business persona).",
+  "profile": {
+    "headline": "Regional restaurant group with six casual Mexican restaurants and an events catering arm",
+    "stage": "business",
+    "organization": "Grupo Maíz Azul",
+    "location": "Guadalajara, Jalisco, Mexico",
+    "reach": "country",
+    "seeking": ["clients", "partners", "competitions", "events", "funding"],
+    "interests": ["Mexican cuisine", "corporate catering", "restaurant operations", "local sourcing"],
+    "skills": ["event catering for up to 800 guests", "regional Jalisco cuisine", "multi-site restaurant management"],
+    "goals": "Grow corporate and event catering contracts, find reliable local suppliers, and win recognition in national restaurant awards.",
+    "links": ["https://www.grupomaizazul.example"],
+    "languages": ["Spanish", "English"]
+  }
+}

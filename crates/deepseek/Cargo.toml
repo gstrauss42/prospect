@@ -1,0 +1,13 @@
+[package]
+name = "deepseek"
+description = "Blocking DeepSeek client: v1 chat completions (JSON, thinking, vision), Search API and Fetch API"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+ureq.workspace = true
+base64.workspace = true
+model.workspace = true
