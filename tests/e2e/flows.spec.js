@@ -26,6 +26,9 @@ test.describe('onboarding', () => {
     await expect(note.locator('.confidence')).toContainText('% sure');
     await expect(note.locator('.sources a').first()).toHaveAttribute('rel', 'noopener noreferrer');
     await expect(note.locator('.found li').first()).toBeVisible();
+    // Nothing that tells the business about itself: no summary, no product or customer counts.
+    await expect(note.locator('blockquote')).toHaveCount(0);
+    await expect(note.locator('.found')).not.toContainText(/product|customer/i);
   });
 
   test('a failed research run still lets the profile be filled in by hand', async ({ page, request }) => {
@@ -89,14 +92,14 @@ test.describe('signed in', () => {
   test('intelligence tabs: only non-empty sections, sources on every item', async ({ page }) => {
     await seed(page, 'dashboard');
     await page.goto('/');
-    await expect(page.getByRole('tab')).toHaveCount(8);
+    await expect(page.getByRole('tab')).toHaveCount(5);
     const names = await page.getByRole('tab').allInnerTexts();
-    expect(names.map((t) => t.replace(/\d+/g, '').trim())).toEqual(['Opportunities', 'Overview', 'Products & services', 'Customers', 'Competitors', 'Market', 'Regulation', 'News']);
+    expect(names.map((t) => t.replace(/\d+/g, '').trim())).toEqual(['Opportunities', 'Competitors', 'Market', 'Regulation', 'News']);
     await page.getByRole('tab', { name: /Competitors/ }).click();
     await expect(page).toHaveURL(/tab=competitors/);
     await expect(page.locator('.bullseye')).toBeVisible();
     await expect(page.locator('.pill-hi').first()).toContainText('High overlap');
-    for (const tab of ['Products & services', 'Customers', 'Market', 'Regulation', 'News']) {
+    for (const tab of ['Market', 'Regulation', 'News']) {
       await page.getByRole('tab', { name: new RegExp(tab) }).click();
       const cards = page.locator('.icard');
       await expect(cards.first()).toBeVisible();
@@ -106,15 +109,22 @@ test.describe('signed in', () => {
     await expect(page.locator('.tl-when b').first()).toBeVisible();
     await page.goBack();
     await expect(page.getByRole('tab', { name: /Regulation/ })).toHaveAttribute('aria-selected', 'true');
-    await page.getByRole('tab', { name: 'Overview' }).click();
-    await page.locator('.jump-card').filter({ hasText: 'Customers' }).click();
-    await expect(page.getByRole('tab', { name: /Customers/ })).toHaveAttribute('aria-selected', 'true');
-    await expect(page.getByText('Named customers').first()).toBeVisible();
+  });
+
+  test('the business is never told about itself: old overview, product and customer links land on the opportunities', async ({ page }) => {
+    await seed(page, 'dashboard');
+    for (const tab of ['overview', 'offerings', 'segments']) {
+      await page.goto(`/?tab=${tab}`);
+      await expect(page.getByRole('tab', { name: /Opportunities/ })).toHaveAttribute('aria-selected', 'true');
+      await expect(page).toHaveURL(/\/$/);
+    }
+    await expect(page.getByRole('tab', { name: /Overview|Products|Customers/ })).toHaveCount(0);
+    await expect(page.getByText('At a glance')).toHaveCount(0);
   });
 
   test('refresh intelligence', async ({ page }) => {
     await seed(page, 'dashboard');
-    await page.goto('/?tab=overview');
+    await page.goto('/?tab=competitors');
     await page.getByRole('button', { name: 'Refresh intelligence' }).click();
     await expect(page.locator('.refresh-bar')).toContainText('Researching');
     await expect(page.getByText('Intelligence updated')).toBeVisible({ timeout: 30_000 });

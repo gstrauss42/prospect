@@ -426,6 +426,27 @@ fn vision_rejecting_everything_tries_one_more_batch_then_gives_up() {
 }
 
 #[test]
+fn nothing_beautiful_still_uses_the_best_decent_photo_instead_of_none() {
+    let (_turn, base) = mock();
+    let (r, report) = find_background_report(
+        &config(base),
+        &ai(base),
+        &hint("Lacklustre", &["chef plating food", "kitchen herbs"]),
+        false,
+    );
+    let bg = r.unwrap_or_else(|e| panic!("{e}: {}", report.summary()));
+    assert_eq!(report.decision, "best available", "{}", report.summary());
+    assert!(report.verdicts.iter().all(|v| v.best.is_none()));
+    // The highest-scoring photo of the first batch (the 5), not just the first one.
+    let first_batch = report.verdicts[0].scores.len();
+    assert_eq!(
+        report.winner.as_ref(),
+        Some(&report.previews[first_batch / 2].candidate)
+    );
+    assert!(sniff(&bg.bytes).is_some());
+}
+
+#[test]
 fn too_few_results_trigger_a_second_wave() {
     let (_turn, base) = mock();
     let (r, report) = find_background_report(

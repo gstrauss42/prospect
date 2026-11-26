@@ -23,7 +23,8 @@ image/jpeg, a preview that 404s, a GFDL-only file, a TIFF scan.
 
 CHAT_STAGES["curate"] answers the imagery crate's vision call: it checks every image is an inline
 base64 data URL whose bytes are a real image, then picks photo 2 (or 1 if there is only one) with
-a valid JSON verdict. A theme whose prompt contains "reject" gets "none is good enough".
+a valid JSON verdict. A theme whose prompt contains "reject" gets "none is good enough" (every photo
+scored 2, a hard flaw); one containing "lacklustre" gets decent scores (4s and a 5) but no pick.
 """
 
 import base64
@@ -397,6 +398,10 @@ def curate(body):
         return {"scores": [], "best": 0, "why": "There are no photos to judge."}
     if "reject" in (system + " " + text).lower():
         return {"scores": [2] * n, "best": 0, "why": "None of these would work as a calm, on-theme background."}
+    if "lacklustre" in (system + " " + text).lower():
+        scores = [4] * n
+        scores[n // 2] = 5
+        return {"scores": scores, "best": 0, "why": "Nothing here is beautiful enough."}
     best = 2 if n >= 2 else 1
     scores = [5] * n
     scores[best - 1] = 9

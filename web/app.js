@@ -729,16 +729,15 @@ function ResearchScreen() {
   startPolling();
   return { el, update, destroy: board.stop };
 }
+// What the business can learn from. Its own overview, products and customers stay background data:
+// they steer the searches, but telling a business about itself is never shown.
 const INTEL_TABS = [
-  ['overview', 'Overview', (i) => (i.overview && i.overview.summary ? 1 : 0)],
-  ['offerings', 'Products & services', (i) => (i.offerings || []).length],
-  ['segments', 'Customers', (i) => (i.segments || []).length],
   ['competitors', 'Competitors', (i) => (i.competitors || []).length],
   ['trends', 'Market', (i) => (i.trends || []).length],
   ['regulation', 'Regulation', (i) => (i.regulation || []).length],
   ['news', 'News', (i) => (i.news || []).length],
 ];
-const FOUND = { offerings: ['product or service', 'products & services'], segments: ['customer segment', 'customer segments'], competitors: ['competitor', 'competitors'],
+const FOUND = { competitors: ['competitor', 'competitors'],
   trends: ['market trend', 'market trends'], regulation: ['regulation', 'regulations'], news: ['news item', 'news items'] };
 function ReviewScreen() {
   const p = S.me.profile || {};
@@ -780,7 +779,6 @@ function FoundNote(intel) {
   const counts = Object.entries(FOUND).map(([k, [one, many]]) => [(intel[k] || []).length, one, many]).filter(([n]) => n);
   return h('section', { class: 'research-note', 'aria-label': 'What research found' },
     h('p', { class: 'note-title', text: 'Here’s what we found. Change anything below, then continue.' }),
-    h('blockquote', { text: o.summary }),
     counts.length ? h('ul', { class: 'found' }, counts.map(([n, one, many]) => h('li', null, h('b', { text: String(n) }), ' ', n === 1 ? one : many))) : null,
     confidenceLine(intel.confidence),
     (o.sources || []).length ? h('div', null, h('p', { class: 'hint', text: 'Sources' }), h('ul', { class: 'sources' }, o.sources.slice(0, 8).map((src) => h('li', null, SourceLink(src))))) : null);
@@ -847,44 +845,9 @@ function SourceLink(src) {
 const srcFoot = (src) => { const l = SourceLink(src); return l ? h('footer', { class: 'icard-foot' }, l) : null; };
 const pill = (text, kind) => h('span', { class: `pill pill-${kind}`, text });
 
-function IntelPanel(tab, { onTab }) {
-  const intel = S.me.intel || {};
-  const panels = { overview: OverviewPanel, offerings: OfferingsPanel, segments: SegmentsPanel, competitors: CompetitorsPanel, trends: MarketPanel, regulation: RegulationPanel, news: NewsPanel };
-  return (panels[tab] || OverviewPanel)(intel, onTab);
-}
-function OverviewPanel(intel, onTab) {
-  const o = intel.overview || {};
-  const facts = [['Industry', o.industry], ['Headquarters', o.headquarters], ['Founded', o.founded], ['Size', o.size], ['Business model', o.business_model]].filter(([, v]) => v);
-  const counts = INTEL_TABS.slice(1).map(([id, label, n]) => [id, label, n(intel)]).filter(([, , n]) => n);
-  return h('div', { class: 'intel' },
-    h('section', { class: 'lead-card' },
-      h('p', { class: 'eyebrow', text: 'At a glance' }),
-      h('p', { class: 'lead-text', text: o.summary }),
-      (o.sources || []).length ? h('div', { class: 'lead-sources' }, o.sources.slice(0, 4).map(SourceLink)) : null),
-    facts.length || (o.markets || []).length ? h('div', { class: 'snapshot' },
-      facts.map(([k, v]) => h('div', { class: 'snap' }, h('p', { class: 'snap-k', text: k }), h('p', { class: 'snap-v', text: v }))),
-      (o.markets || []).length ? h('div', { class: 'snap' }, h('p', { class: 'snap-k', text: 'Markets' }), h('ul', { class: 'snap-tags' }, o.markets.map((m) => h('li', { text: m })))) : null) : null,
-    counts.length ? h('div', null, h('h3', { class: 'set-title intel-sub', text: 'What we found' }),
-      h('div', { class: 'jump' }, counts.map(([id, label, n]) => h('button', { type: 'button', class: 'jump-card', on: { click: () => onTab(id) } },
-        h('b', { text: String(n) }), h('span', { text: label }), icon('arrow'))))) : null);
-}
-function OfferingsPanel(intel) {
-  return h('div', { class: 'igrid' }, intel.offerings.map((x) => h('article', { class: 'icard' },
-    h('h3', { class: 'icard-title', text: x.name }),
-    x.description ? h('p', { class: 'icard-text', text: x.description }) : null,
-    h('div', { class: 'icard-meta' },
-      x.audience ? h('span', { class: 'fact' }, icon('pin'), h('span', { text: `For ${x.audience.charAt(0).toLowerCase()}${x.audience.slice(1)}` })) : null,
-      x.pricing ? h('span', { class: 'fact' }, icon('value'), h('span', { text: x.pricing })) : null),
-    srcFoot(x.source))));
-}
-function SegmentsPanel(intel) {
-  return h('div', { class: 'igrid' }, intel.segments.map((x) => h('article', { class: 'icard' },
-    h('div', { class: 'seg-icon', 'aria-hidden': 'true', text: (x.name || '?').trim()[0].toUpperCase() }),
-    h('h3', { class: 'icard-title', text: x.name }),
-    x.description ? h('p', { class: 'icard-text', text: x.description }) : null,
-    (x.examples || []).length ? h('div', { class: 'examples' }, h('p', { class: 'snap-k', text: 'Named customers' }),
-      h('ul', { class: 'snap-tags' }, x.examples.map((e) => h('li', { text: e })))) : null,
-    srcFoot(x.source))));
+function IntelPanel(tab) {
+  const panels = { competitors: CompetitorsPanel, trends: MarketPanel, regulation: RegulationPanel, news: NewsPanel };
+  return panels[tab] ? panels[tab](S.me.intel || {}) : null;
 }
 const OVERLAP = { high: ['High overlap', 'hi', 0], medium: ['Medium overlap', 'mid', 1], low: ['Low overlap', 'lo', 2] };
 function Bullseye(comps) {
@@ -1267,11 +1230,15 @@ function DashboardScreen() {
   function renderTabs() {
     const intel = S.me.intel || {};
     const avail = [['opportunities', 'Opportunities', S.items.length], ...INTEL_TABS.map(([id, label, n]) => [id, label, n(intel)]).filter(([, , n]) => n)];
-    if (!avail.some(([id]) => id === S.tab)) S.tab = 'opportunities';
+    if (!avail.some(([id]) => id === S.tab)) {
+      // An old link to a tab that's gone (or empty) lands on the opportunities.
+      if (S.tab !== 'opportunities' && new URLSearchParams(location.search).has('tab')) history.replaceState(null, '', '/');
+      S.tab = 'opportunities';
+    }
     tabsEl.replaceChildren(...avail.map(([id, label, n]) => {
       const sel = S.tab === id;
       return h('button', { type: 'button', role: 'tab', class: 'tab', id: 'tab-' + id, 'aria-selected': String(sel), tabindex: sel ? '0' : '-1', on: { click: () => setTab(id) } },
-        label, id === 'overview' ? null : h('span', { class: 'count', text: String(n) }));
+        label, h('span', { class: 'count', text: String(n) }));
     }));
     tabsEl.hidden = avail.length < 2;
   }
@@ -1301,8 +1268,8 @@ function DashboardScreen() {
     const tab = INTEL_TABS.find(([id]) => id === S.tab);
     const meta = [intel.updated_at ? `Researched ${relTime(intel.updated_at)}` : '', intel.confidence ? `${Math.round(intel.confidence * 100)}% confidence` : ''].filter(Boolean).join(' · ');
     intelEl.setAttribute('aria-labelledby', 'tab-' + S.tab);
-    intelEl.replaceChildren(h('div', { class: 'intel-head' }, h('div', null, h('h2', { class: 'h2', text: tab ? tab[1] : 'Overview' }), meta ? h('p', { class: 'hint', text: meta }) : null), btn),
-      IntelPanel(S.tab, { onTab: setTab }));
+    intelEl.replaceChildren(h('div', { class: 'intel-head' }, h('div', null, h('h2', { class: 'h2', text: tab ? tab[1] : '' }), meta ? h('p', { class: 'hint', text: meta }) : null), btn),
+      IntelPanel(S.tab));
   }
   function renderSheet(animate) {
     renderTabs();

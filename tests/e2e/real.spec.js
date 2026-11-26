@@ -63,16 +63,14 @@ test('sign up → live research → review with sources → opportunities and ev
   // Each intelligence tab that's shown has items, each with a source link.
   const tabs = (await page.getByRole('tab').allInnerTexts()).map((t) => t.replace(/\d+/g, '').trim());
   expect(tabs[0]).toBe('Opportunities');
-  expect(tabs).toContain('Overview');
-  for (const tab of tabs.slice(2)) {
+  for (const gone of ['Overview', 'Products & services', 'Customers']) expect(tabs).not.toContain(gone);
+  for (const tab of tabs.slice(1)) {
     await page.getByRole('tab', { name: new RegExp(tab.replace('&', '\\&')) }).click();
     if (tab === 'Competitors') await expect(page.locator('.bullseye')).toBeVisible();
     const cards = page.locator('.icard');
     await expect(cards.first()).toBeVisible();
     await expect(page.locator('.icard .src a')).toHaveCount(await cards.count());
   }
-  await page.getByRole('tab', { name: 'Overview' }).click();
-  await expect(page.locator('.intel')).toBeVisible();
 });
 
 test('sign out, wrong password, sign back in', async ({ page }) => {

@@ -4,7 +4,7 @@ Prospect finds the opportunities a business would otherwise miss: tenders, partn
 
 **In your inbox:** a short weekly email of new opportunities, best first, each with why it fits and the next step. Tell it what's useful and what isn't, and the next one is sharper.
 
-**On your dashboard:** everything it has found, the sourced research behind it (overview, products, customers, competitors, market, regulation and news), and the controls to tune it.
+**On your dashboard:** everything it has found, the sourced research behind it (competitors, market, regulation and news), and the controls to tune it.
 
 ![The Prospect dashboard for Personio, with 14 opportunities found from public sources](docs/assets/hero.jpg)
 

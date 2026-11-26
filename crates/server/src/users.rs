@@ -119,6 +119,8 @@ pub struct ThemeRecord {
     pub version: i64,
     /// [`subject_key`] of the profile the theme was built for.
     pub built_for: String,
+    /// True when the photo is a built-in one because the live search failed; the next run retries.
+    pub fallback: bool,
 }
 
 /// A fingerprint of what a page is "about" (industry, headline, stage, interests, skills). A new
@@ -150,9 +152,9 @@ pub fn theme_json(user: &User, active: Option<&RunRow>) -> Value {
     let theme = user.theme();
     let building = match active {
         Some(r) if r.kind == "theme" => true,
-        Some(r) if r.kind == "discover" => theme
-            .as_ref()
-            .is_none_or(|t| t.built_for != subject_key(&user.profile())),
+        Some(r) if r.kind == "discover" => theme.as_ref().is_none_or(|t| {
+            t.built_for != subject_key(&user.profile()) || t.fallback || t.image.is_none()
+        }),
         _ => false,
     };
     let status = if building {

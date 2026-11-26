@@ -20,7 +20,9 @@
 //! 4. **Download** up to ten previews (~1000 px) in parallel, size-capped and sniffed; keep the
 //!    first eight valid ones.
 //! 5. **Curate**: one vision call scores them like an art director and picks one, or none (then
-//!    one more batch is tried, if there is one). If the call fails, the best-ranked preview wins.
+//!    one more batch is tried, if there is one). If none is beautiful enough, the best decent one
+//!    is used rather than none; only photos with a hard flaw (watermark, text) are never used. If
+//!    the call fails, the best-ranked preview wins.
 //! 6. **Download the winner** at ~1920 px (falling back to its preview), sniff it, and build the
 //!    [`ThemeImage`] with a credit line such as `Photo: Jane Doe · CC BY 2.0 · via Openverse`.
 //!
@@ -28,6 +30,7 @@
 
 pub mod candidates;
 mod curate;
+mod fallback;
 mod formats;
 mod net;
 
@@ -38,6 +41,7 @@ use model::{ThemeHint, ThemeImage};
 
 pub use candidates::{Candidate, Provider, credit_line};
 pub use curate::Verdict;
+pub use fallback::{fallback_background, fallback_key};
 pub use formats::{is_complete, sniff};
 
 use net::{FetchError, Image, Net, parallel};
@@ -146,6 +150,10 @@ const COMMONS_LIMIT: &str = "15";
 const SHORTLIST: usize = 16;
 /// Previews downloaded per batch, and the most sent to the vision model.
 const BATCH_DOWNLOADS: usize = 10;
+/// When no photo reaches the vision model's bar ([`curate::MIN_SCORE`]), the best one scoring at
+/// least this is still used: a decent live photo beats none. A hard flaw (watermark, logo, text)
+/// scores 2 at most, so those are never used.
+const ACCEPTABLE_SCORE: f64 = 4.0;
 const MAX_PREVIEWS: usize = 8;
 /// Caps for one preview and for all previews in one vision call.
 const PREVIEW_MAX_BYTES: usize = 3 * 1024 * 1024;
@@ -185,7 +193,7 @@ pub struct Report {
     pub verdicts: Vec<Verdict>,
     /// Why the vision call failed, when it did (the best-ranked preview is used instead).
     pub vision_error: Option<String>,
-    /// How the winner was chosen: "vision" or "ranking".
+    /// How the winner was chosen: "vision", "best available" (decent, not beautiful) or "ranking".
     pub decision: String,
     pub winner: Option<Candidate>,
     /// True when the large version was downloaded, false when the preview was kept.
@@ -210,7 +218,8 @@ impl Report {
     /// One line for a log.
     pub fn summary(&self) -> String {
         let mut s = format!(
-            "{} searches, {} found, {} suitable, {} previews",
+            "searches [{}]: {} requests, {} found, {} suitable, {} previews",
+            self.queries.join(" | "),
             self.search_requests,
             self.found,
             self.suitable,
@@ -222,8 +231,32 @@ impl Report {
                 self.source_errors.join("; ")
             ));
         }
+        if !self.failed_downloads.is_empty() {
+            s.push_str(&format!(
+                ", {} download(s) failed ({})",
+                self.failed_downloads.len(),
+                self.failed_downloads
+                    .iter()
+                    .take(2)
+                    .map(|d| truncate(d, 80))
+                    .collect::<Vec<_>>()
+                    .join("; ")
+            ));
+        }
         if let Some(e) = &self.vision_error {
             s.push_str(&format!(", vision failed: {e}"));
+        }
+        if self.winner.is_none() && !self.verdicts.is_empty() {
+            let scores: Vec<String> = self
+                .verdicts
+                .iter()
+                .flat_map(|v| {
+                    v.scores
+                        .iter()
+                        .map(|s| s.map_or("-".into(), |s| s.to_string()))
+                })
+                .collect();
+            s.push_str(&format!(", vision scores [{}]", scores.join(" ")));
         }
         if let Some(w) = &self.winner {
             s.push_str(&format!(
@@ -608,6 +641,8 @@ fn run(
 
     // 4–5. Previews and the vision pick, in up to two batches.
     let mut winner: Option<(Candidate, Image)> = None;
+    // The best photo judged decent but not beautiful, in case nothing better turns up.
+    let mut runner_up: Option<(f64, Candidate, Image)> = None;
     let mut downloads_all_network = true;
     let mut offset = 0;
     for _round in 0..MAX_ROUNDS {
@@ -649,6 +684,16 @@ fn run(
                 break;
             }
             Ok(None) => {
+                if let Some(v) = report.verdicts.last() {
+                    for (i, score) in v.scores.iter().enumerate() {
+                        if let (Some(s), Some((c, img))) = (*score, previews.get(i))
+                            && s >= ACCEPTABLE_SCORE
+                            && runner_up.as_ref().is_none_or(|(best, _, _)| s > *best)
+                        {
+                            runner_up = Some((s, c.clone(), img.clone()));
+                        }
+                    }
+                }
                 // Nothing good enough here; try the next batch if there are a few more.
                 if ranked.len().saturating_sub(offset) < 3 {
                     break;
@@ -661,6 +706,12 @@ fn run(
                 break;
             }
         }
+    }
+    if winner.is_none()
+        && let Some((_, c, img)) = runner_up
+    {
+        report.decision = "best available".into();
+        winner = Some((c, img));
     }
     let Some((cand, preview)) = winner else {
         if report.previews.is_empty()
@@ -770,18 +821,29 @@ mod tests {
     #[test]
     fn report_summary_reads_well() {
         let r = Report {
+            queries: vec!["warehouse aisles".into(), "shipping port".into()],
             search_requests: 4,
             found: 40,
             suitable: 22,
+            failed_downloads: vec!["Crane: HTTP 429".into()],
+            verdicts: vec![Verdict {
+                scores: vec![Some(3.0), None],
+                best: None,
+                why: String::new(),
+            }],
             decision: "vision".into(),
             elapsed_ms: 1234,
             ..Default::default()
         };
         let s = r.summary();
         assert!(
-            s.starts_with("4 searches, 40 found, 22 suitable, 0 previews"),
+            s.starts_with(
+                "searches [warehouse aisles | shipping port]: 4 requests, 40 found, 22 suitable, 0 previews"
+            ),
             "{s}"
         );
+        assert!(s.contains("1 download(s) failed (Crane: HTTP 429)"), "{s}");
+        assert!(s.contains("vision scores [3 -]"), "{s}");
         assert!(s.ends_with("no winner in 1234 ms"), "{s}");
     }
 }

@@ -821,7 +821,7 @@ fn discover(run: &RunRow, sink: &Sink, cancel: &AtomicBool) -> Result<(), RunErr
     }
     let theme_needed = user
         .theme()
-        .is_none_or(|t| t.built_for != subject_key(&profile));
+        .is_none_or(|t| t.built_for != subject_key(&profile) || t.fallback || t.image.is_none());
     let today = model::date::today();
     sink.report(Progress::new("planning", "Getting ready to search", 2));
 
@@ -1148,8 +1148,26 @@ fn build_theme(
     };
     let accent = model::sanitize_hex_color(&hint.accent, DEFAULT_ACCENT);
     sink.note("theming", "Looking for a background photo");
-    let background = imagery::find_background(&app().imagery, ai, &hint);
-    let photo = store_theme(user.id, label, accent, background, subject_key(profile))?;
+    // Never a page without a photo: a live, credited one whenever at all possible, and the
+    // built-in photo that fits best only when every attempt failed (the next run tries again).
+    let (background, fallback) = match find_live_photo(ai, user.id, profile, &hint, cancel) {
+        Some(bg) => (bg, false),
+        None => {
+            warn!(
+                "theme for user {}: using a built-in photo until the next run",
+                user.id
+            );
+            (imagery::fallback_background(&hint), true)
+        }
+    };
+    let photo = store_theme(
+        user.id,
+        label,
+        accent,
+        Ok(background),
+        subject_key(profile),
+        fallback,
+    )?;
     sink.note(
         "theming",
         if photo {
@@ -1159,6 +1177,96 @@ fn build_theme(
         },
     );
     Ok(photo)
+}
+
+/// Attempts at a live photo, and how long a theme keeps starting new ones (it runs alongside
+/// discovery, which waits for it).
+const PHOTO_ATTEMPTS: u64 = 3;
+const PHOTO_DEADLINE: Duration = Duration::from_secs(60);
+
+/// A live, credited photo for the theme, trying hard before giving up. A source that is down or
+/// rate-limiting gets a short pause and the same searches again; when the AI's photo searches find
+/// nothing usable, broader searches for the industry are tried. Every attempt is logged with what
+/// happened (searches, results, downloads, vision scores), so a failure says why.
+fn find_live_photo(
+    ai: &deepseek::Client,
+    user_id: i64,
+    profile: &Profile,
+    hint: &model::ThemeHint,
+    cancel: &AtomicBool,
+) -> Option<imagery::Background> {
+    let started = Instant::now();
+    let broad = engine::fallback_theme(profile).image_queries;
+    let mut current = hint.clone();
+    let mut broadened = false;
+    for attempt in 1..=PHOTO_ATTEMPTS {
+        if cancel.load(Ordering::Relaxed) {
+            return None;
+        }
+        let (result, report) = imagery::find_background_report(&app().imagery, ai, &current, false);
+        let source_trouble = match result {
+            Ok(bg) if sniff_image(&bg.bytes).is_some() => {
+                info!(
+                    "theme for user {user_id}: photo found on attempt {attempt}: {}",
+                    report.summary()
+                );
+                return Some(bg);
+            }
+            Ok(_) => {
+                warn!(
+                    "theme for user {user_id}: attempt {attempt} found an unusable image: {}",
+                    report.summary()
+                );
+                true
+            }
+            Err(imagery::Error::Network(_)) => {
+                warn!(
+                    "theme for user {user_id}: attempt {attempt}, image sources unreachable: {}",
+                    report.summary()
+                );
+                true
+            }
+            Err(imagery::Error::NothingSuitable) => {
+                warn!(
+                    "theme for user {user_id}: attempt {attempt}, nothing suitable: {}",
+                    report.summary()
+                );
+                false
+            }
+        };
+        if attempt == PHOTO_ATTEMPTS || started.elapsed() >= PHOTO_DEADLINE {
+            break;
+        }
+        if source_trouble {
+            if !pause(Duration::from_secs(5 * attempt), cancel) {
+                return None;
+            }
+        } else if !broadened && !broad.is_empty() && broad != current.image_queries {
+            broadened = true;
+            current = model::ThemeHint {
+                image_queries: broad.clone(),
+                ..current
+            };
+        } else {
+            break;
+        }
+    }
+    None
+}
+
+/// Sleep for `d`, returning false early if the run is cancelled or the server is stopping.
+fn pause(d: Duration, cancel: &AtomicBool) -> bool {
+    let until = Instant::now() + d;
+    loop {
+        if cancel.load(Ordering::Relaxed) || app().stopping() {
+            return false;
+        }
+        let left = until.saturating_duration_since(Instant::now());
+        if left.is_zero() {
+            return true;
+        }
+        std::thread::sleep(left.min(Duration::from_millis(250)));
+    }
 }
 
 /// The image type from its first bytes (trusting the bytes, not the declared type).
@@ -1180,6 +1288,7 @@ fn store_theme(
     accent: String,
     background: Result<imagery::Background, imagery::Error>,
     built_for: String,
+    fallback: bool,
 ) -> Result<bool, String> {
     let c = db::conn().map_err(|e| e.to_string())?;
     let previous = User::load(&c, user_id)
@@ -1224,6 +1333,7 @@ fn store_theme(
         file: file.clone(),
         version,
         built_for,
+        fallback,
     };
     let n = c
         .execute(

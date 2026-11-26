@@ -20,7 +20,7 @@ const SCREENS = {
   'settings': async (page) => { await seed(page, 'dashboard', { connections: true }); await page.goto('/settings'); await page.waitForSelector('.conn'); },
   'model': async (page) => { await seed(page, 'dashboard'); await page.goto('/'); await page.waitForSelector('.card'); await page.click('.model-chip'); await page.click('text=Claude on Amazon Bedrock'); },
 };
-for (const tab of ['overview', 'offerings', 'segments', 'competitors', 'trends', 'regulation', 'news']) {
+for (const tab of ['competitors', 'trends', 'regulation', 'news']) {
   SCREENS[`tab-${tab}`] = async (page) => { await seed(page, 'dashboard'); await page.goto(`/?tab=${tab}`); await page.waitForSelector('.intel-head'); await page.waitForTimeout(600); await toSheet(page); };
 }
 
