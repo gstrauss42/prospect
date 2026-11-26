@@ -15,13 +15,13 @@ env -i PATH="$PATH" HOME="$HOME" \
   ADDR="127.0.0.1:$APP_PORT" PUBLIC_URL="http://127.0.0.1:$APP_PORT" DATA_DIR="$DATA" \
   DEEPSEEK_API_KEY=mock DEEPSEEK_BASE_URL="$M" \
   OPENVERSE_URL="$M/openverse/v1" COMMONS_API_URL="$M/commons/w/api.php" \
-  MAILGUN_API_KEY=mock MAILGUN_DOMAIN=mg.example.test MAILGUN_SENDER_EMAIL="Opportunity <hello@example.test>" MAILGUN_BASE_URL="$M/mailgun" \
+  MAILGUN_API_KEY=mock MAILGUN_DOMAIN=mg.example.test MAILGUN_SENDER_EMAIL="Prospect <hello@example.test>" MAILGUN_BASE_URL="$M/mailgun" \
   BEDROCK_RUNTIME_ENDPOINT="$M/bedrock-runtime" BEDROCK_CONTROL_ENDPOINT="$M/bedrock" \
   SLACK_API_BASE="$M/slack" SLACK_AUTH_BASE="$M/slack" MS_LOGIN_BASE="$M/mslogin" MS_GRAPH_BASE="$M/msgraph" \
   ATLASSIAN_AUTH_BASE="$M/atlassian-auth" ATLASSIAN_API_BASE="$M/atlassian-api" CONFLUENCE_SITE_BASES="$M/confluence-site" \
   MS_CLIENT_ID=6731de76-14a6-49ae-97bc-6eba6914391e MS_CLIENT_SECRET='mock-ms-client-secret~not-a-real-one' \
   ATLASSIAN_CLIENT_ID=mock-atlassian-client-id ATLASSIAN_CLIENT_SECRET=mock-atlassian-client-secret \
-  ./target/release/opportunity >"$DATA/app.log" 2>&1 &
+  ./target/release/prospect >"$DATA/app.log" 2>&1 &
 APP_PID=$!
 trap 'kill $APP_PID $MOCK_PID 2>/dev/null; echo "logs: $DATA"' EXIT
 for _ in $(seq 1 50); do curl -sf "http://127.0.0.1:$APP_PORT/healthz" >/dev/null && break; sleep 0.2; done

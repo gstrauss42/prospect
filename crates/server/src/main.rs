@@ -1,4 +1,4 @@
-//! The Opportunity web server: one small binary that serves the web client and the JSON API,
+//! The Prospect web server: one small binary that serves the web client and the JSON API,
 //! keeps everything in SQLite, runs discovery/research/theme jobs on worker threads and refreshes
 //! everyone on a schedule. See docs/ARCHITECTURE.md and docs/API.md.
 //!
@@ -82,8 +82,9 @@ fn run(cfg: Config) -> Result<(), String> {
             cfg.data_dir.display()
         )
     })?;
-    db::init(cfg.data_dir.join("opportunity.db"))
-        .map_err(|e| format!("can't open the database: {e}"))?;
+    let db_path = cfg.data_dir.join("prospect.db");
+    move_legacy_db(&cfg.data_dir, &db_path);
+    db::init(db_path).map_err(|e| format!("can't open the database: {e}"))?;
     runs::recover().map_err(|e| format!("can't recover runs: {e}"))?;
 
     let ai = deepseek::Config::from_env().map(deepseek::Client::new);
@@ -123,7 +124,7 @@ fn run(cfg: Config) -> Result<(), String> {
     let scheduler = scheduler::start();
     let server = http::start(listener, app.cfg.http_threads)?;
     info!(
-        "opportunity {} listening on http://{} (public URL {}, data in {}, AI {}, email {})",
+        "prospect {} listening on http://{} (public URL {}, data in {}, AI {}, email {})",
         env!("CARGO_PKG_VERSION"),
         bound,
         app.cfg.public_url,
@@ -163,4 +164,22 @@ fn run(cfg: Config) -> Result<(), String> {
     }
     info!("bye");
     Ok(())
+}
+
+/// Databases created before the rename to Prospect are called `opportunity.db`: move one (and its
+/// WAL files) into place once, so existing accounts carry over.
+fn move_legacy_db(dir: &Path, new: &Path) {
+    let old = dir.join("opportunity.db");
+    if new.exists() || !old.exists() {
+        return;
+    }
+    for suffix in ["", "-wal", "-shm"] {
+        let from = dir.join(format!("opportunity.db{suffix}"));
+        if from.exists()
+            && let Err(e) = std::fs::rename(&from, dir.join(format!("prospect.db{suffix}")))
+        {
+            warn!("couldn't move {} into place: {e}", from.display());
+        }
+    }
+    info!("moved the database from opportunity.db to prospect.db");
 }

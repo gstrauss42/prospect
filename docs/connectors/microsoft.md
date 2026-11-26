@@ -1,13 +1,13 @@
 # Microsoft 365 connector: setup and security
 
-This page is for the administrator who connects Opportunity to Microsoft 365, and for the security
+This page is for the administrator who connects Prospect to Microsoft 365, and for the security
 reviewer who has to approve it. It covers what the connector reads, the exact permissions it uses
 and why, how to register it in Microsoft Entra ID, and how "read-only" is enforced. That last part
-doesn't rest on the permissions alone: Opportunity enforces it independently in its own code.
+doesn't rest on the permissions alone: Prospect enforces it independently in its own code.
 
 ## In one paragraph
 
-When a person connects Microsoft 365, Opportunity reads two things with that person's own
+When a person connects Microsoft 365, Prospect reads two things with that person's own
 delegated access: recent mail in their **Outlook Inbox** that looks like an opportunity (an
 invitation to speak, an RFP, an internal opening, a partnership request), and **calendar events in
 the next 60 days** that look like one (a conference, a panel, an interview). For each item it reads
@@ -27,13 +27,13 @@ read endpoints.
 
 * **The keywords** ("opportunity", "speaker", "rfp", "hiring", "partnership" and so on, about 40
   of them) are sent to Microsoft as a mailbox search, so Graph returns only matching mail.
-  Opportunity then ranks the results locally. Newsletters, notifications, cancelled events and
+  Prospect then ranks the results locally. Newsletters, notifications, cancelled events and
   routine meetings (stand-ups, 1:1s, focus time) are pushed down or dropped.
 * **Bounded**: at most 200 messages and 150 events are looked at per run, and at most the run's
   item limit (60 by default) is passed on.
 * **Reading changes nothing.** Reading through Microsoft Graph doesn't mark mail as read or answer
   invitations.
-* **Where the data goes.** Items are fetched when a run starts and handed to Opportunity's engine
+* **Where the data goes.** Items are fetched when a run starts and handed to Prospect's engine
   for that run only. The engine gives them, as text, to the AI model the server is configured with
   (DeepSeek by default, or Claude on Amazon Bedrock in your own AWS account), so it can recognise
   opportunities. The AI only receives text; it has no tools and can't cause any request. Fetched
@@ -44,7 +44,7 @@ read endpoints.
 
 ## Permissions
 
-Opportunity uses **delegated permissions only**: it acts as the signed-in person and can never see
+Prospect uses **delegated permissions only**: it acts as the signed-in person and can never see
 more than they can. It uses **no application permissions** (no tenant-wide access to mailboxes).
 
 | Permission (Microsoft Graph, delegated) | Why it's needed |
@@ -59,11 +59,11 @@ more than they can. It uses **no application permissions** (no tenant-wide acces
 
 None of these can write. `Mail.Read` can't send, delete, move or modify mail; that needs
 `Mail.Send` or `Mail.ReadWrite`. `Calendars.Read` can't create, change or answer events; that needs
-`Calendars.ReadWrite`. Opportunity never asks for those.
+`Calendars.ReadWrite`. Prospect never asks for those.
 
 > **Be precise with reviewers:** `Mail.Read` lets an app read the *whole* mailbox, bodies
-> included. Opportunity's code limits itself to the Inbox and the fields above, and its gateway
-> limits it to four endpoints (see below). Microsoft doesn't enforce those limits; Opportunity
+> included. Prospect's code limits itself to the Inbox and the fields above, and its gateway
+> limits it to four endpoints (see below). Microsoft doesn't enforce those limits; Prospect
 > does. Microsoft *does* enforce the read-only part: these permissions can't write anything.
 
 ## Registering the app in Microsoft Entra ID
@@ -73,9 +73,9 @@ Application Administrator or Application Administrator.
 
 1. **Register it.** In the [Microsoft Entra admin center](https://entra.microsoft.com), open
    **App registrations → New registration**.
-   * **Name:** `Opportunity` (shown to people on the consent screen).
+   * **Name:** `Prospect` (shown to people on the consent screen).
    * **Supported account types:**
-     * *Accounts in this organizational directory only (single tenant)* if this Opportunity server
+     * *Accounts in this organizational directory only (single tenant)* if this Prospect server
        is for your organisation alone. This is the recommended choice. Then set `MS_TENANT` to your
        **Directory (tenant) ID**.
      * *Accounts in any organizational directory (multitenant)* if one server serves several
@@ -84,7 +84,7 @@ Application Administrator or Application Administrator.
      * Don't choose the options that include personal Microsoft accounts: the connector is meant
        for work accounts.
    * **Redirect URI:** platform **Web**, value `{PUBLIC_URL}/api/connectors/microsoft/callback`,
-     for example `https://opportunity.example.com/api/connectors/microsoft/callback`. It must
+     for example `https://prospect.example.com/api/connectors/microsoft/callback`. It must
      match exactly. Use https; Microsoft allows plain http only for `localhost`.
 2. **Note the IDs.** On the app's **Overview** page, copy the **Application (client) ID** (this
    becomes `MS_CLIENT_ID`) and the **Directory (tenant) ID** (this becomes `MS_TENANT` for a single
@@ -99,18 +99,18 @@ Application Administrator or Application Administrator.
    `User.Read`, `Mail.Read` and `Calendars.Read`. (`User.Read` is usually there already.)
    * Add nothing else, and never any application permission.
    * **This matters:** Microsoft includes *every* permission consented for the app in each token,
-     not just the ones Opportunity asks for. If someone later adds `Mail.Send`, `Mail.ReadWrite`,
+     not just the ones Prospect asks for. If someone later adds `Mail.Send`, `Mail.ReadWrite`,
      `Calendars.ReadWrite` or any other permission to this registration and it gets consented,
-     Opportunity refuses every token from then on. New connections fail, and existing ones stop at
+     Prospect refuses every token from then on. New connections fail, and existing ones stop at
      their next token refresh, with a message to reconnect "with read-only access". The fix is to
      remove the extra permission and revoke its consent.
 5. **Grant consent.** Choose **Grant admin consent for _your organisation_** on the API permissions
    page. These permissions don't require an administrator, so people can consent for themselves
    where your tenant allows user consent. Most organisations restrict user consent, though, and
    admin consent saves everyone a prompt. For a multitenant app, each organisation's administrator
-   does this in their own tenant, for example by signing in once through Opportunity and choosing
+   does this in their own tenant, for example by signing in once through Prospect and choosing
    *Consent on behalf of your organization*.
-6. **Optional: limit who can connect.** Open **Enterprise applications → Opportunity → Properties**
+6. **Optional: limit who can connect.** Open **Enterprise applications → Prospect → Properties**
    and set **Assignment required** to **Yes**. Then add the people or groups allowed to connect
    under **Users and groups**. Conditional Access policies apply to this app like any other.
 
@@ -119,22 +119,22 @@ Application Administrator or Application Administrator.
 An app registration can hold more than one secret at a time, so rotation needs no downtime:
 
 1. Create a new secret (step 3) before the current one expires.
-2. Put its value in `MS_CLIENT_SECRET` and restart Opportunity.
+2. Put its value in `MS_CLIENT_SECRET` and restart Prospect.
 3. Check that connecting Microsoft 365 still works, then delete the old secret in Entra ID.
 
 People's connections are unaffected: their refresh tokens are tied to the app, not to a particular
-secret. If the secret expires or is wrong, Opportunity reports that the app registration was
+secret. If the secret expires or is wrong, Prospect reports that the app registration was
 refused and that the administrator needs to check `MS_CLIENT_ID`, `MS_CLIENT_SECRET` and
 `MS_TENANT`. People aren't asked to reconnect, because reconnecting wouldn't help.
 
-## Configuring Opportunity
+## Configuring Prospect
 
 | Variable | Value |
 |---|---|
 | `MS_CLIENT_ID` | The Application (client) ID |
 | `MS_CLIENT_SECRET` | The client secret's value |
 | `MS_TENANT` | Optional. Your Directory (tenant) ID (or a verified domain such as `contoso.onmicrosoft.com`) for a single-tenant app; `organizations` (the default) for any work or school account; `common` also allows personal accounts, which isn't recommended. |
-| `PUBLIC_URL` | The address people use to reach Opportunity; the redirect URI is built from it |
+| `PUBLIC_URL` | The address people use to reach Prospect; the redirect URI is built from it |
 
 Microsoft 365 shows up as available in Settings once both `MS_CLIENT_ID` and `MS_CLIENT_SECRET`
 are set. A malformed `MS_TENANT` is never "corrected" into a broader one: sign-in fails instead.
@@ -146,12 +146,12 @@ not national clouds. Outbound, the connector talks to those two hosts only.
 
 Four independent layers. Any one of them alone prevents a change to a mailbox or calendar.
 
-**1. The token can't write.** Opportunity asks only for the read permissions above. Delegated
+**1. The token can't write.** Prospect asks only for the read permissions above. Delegated
 access also means it can never exceed what the person can do.
 
 **2. Every token's granted permissions are checked.** Microsoft's token response states what the
 token is valid for, which can be more than was requested (see step 4 above). On sign-in and on
-**every** refresh, Opportunity checks that list against an allow-list (`User.Read`, `Mail.Read`,
+**every** refresh, Prospect checks that list against an allow-list (`User.Read`, `Mail.Read`,
 `Mail.ReadBasic`, `Calendars.Read`, `Calendars.ReadBasic`, plus the sign-in scopes) *and* against a
 deny-list of write markers ("write", "send", "manage" and others). A token carrying anything else
 is refused before it is used for anything:
@@ -212,32 +212,32 @@ URL as `blocked`.
 
 ## Revoking access
 
-* **The person** can disconnect Microsoft 365 in Opportunity, which removes the stored credential.
+* **The person** can disconnect Microsoft 365 in Prospect, which removes the stored credential.
 * **An administrator** can do any of the following:
   * remove the person's assignment, or disable sign-in for the enterprise application;
   * revoke the app's consent;
   * revoke the person's sessions, which invalidates their refresh tokens.
 
-Opportunity notices at the next refresh ("the connection was rejected; please reconnect") and
+Prospect notices at the next refresh ("the connection was rejected; please reconnect") and
 stops using the connection. An access token already issued stays valid until it expires (usually
 about an hour), as with any Microsoft 365 app.
 
 ## Behaviour under load and errors
 
-* **Throttling.** If Microsoft Graph asks Opportunity to wait (HTTP 429 with `Retry-After`) for 5
+* **Throttling.** If Microsoft Graph asks Prospect to wait (HTTP 429 with `Retry-After`) for 5
   seconds or less, it waits and retries once; a brief 503 is also retried once. It never spends
   more than 10 seconds waiting in one run. A longer wait means the run uses what it has already
   read, or reports that the service asked it to slow down.
 * **Partial failures.** If only mail or only the calendar can be read (for example because a policy
   blocks calendar access), the other is still used. If the token is rejected, the run stops and the
   connection is refreshed or marked for reconnection.
-* **Search unavailable.** If a mailbox refuses the keyword search, Opportunity falls back to listing
+* **Search unavailable.** If a mailbox refuses the keyword search, Prospect falls back to listing
   the window's Inbox mail by date (still only the same fields) and ranks it locally.
 
 ## Known limitations
 
 * Only the Inbox is read. Mail that rules file into subfolders isn't seen.
-* Opportunity judges an email by its subject and the first 255 characters only. (Microsoft's search
+* Prospect judges an email by its subject and the first 255 characters only. (Microsoft's search
   does match keywords further down the message.)
 * Only the global Microsoft cloud is supported, and the client must authenticate with a secret
   (certificate credentials aren't supported yet).

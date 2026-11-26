@@ -360,7 +360,7 @@ def _throttled(seconds):
 def _graph(req):
     if req.method != "GET" or any(h in req.headers for h in OVERRIDE_HEADERS):
         record_violation("microsoft", req)
-        return _graph_error(405, "Request_BadRequest", "Opportunity mock: Microsoft Graph is read-only here; only GET is allowed.")
+        return _graph_error(405, "Request_BadRequest", "Prospect mock: Microsoft Graph is read-only here; only GET is allowed.")
     path = req.path[len("/msgraph"):]
     key = path.rstrip("/").lower()
     if key == "/_mock/requests":

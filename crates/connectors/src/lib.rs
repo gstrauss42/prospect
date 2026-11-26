@@ -305,7 +305,7 @@ impl Credential {
     }
 
     /// How read-only is enforced for this connection: "provider" when the token's scopes are
-    /// known and verified read-only (all four layers), "app" when only Opportunity's own
+    /// known and verified read-only (all four layers), "app" when only Prospect's own
     /// enforcement applies (a pasted token whose scopes the provider doesn't reveal).
     pub fn enforcement(&self) -> &'static str {
         if self.scopes.is_empty() {

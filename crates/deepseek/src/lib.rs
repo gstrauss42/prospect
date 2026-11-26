@@ -1,4 +1,4 @@
-//! DeepSeek API client: the v1 endpoints Opportunity is built on.
+//! DeepSeek API client: the v1 endpoints Prospect is built on.
 //!
 //! | What              | Endpoint                         | Billing                          |
 //! |-------------------|----------------------------------|----------------------------------|
@@ -528,7 +528,7 @@ impl Client {
     pub fn new(cfg: Config) -> Client {
         let agent: ureq::Agent = ureq::Agent::config_builder()
             .http_status_as_error(false)
-            .user_agent(concat!("opportunity/", env!("CARGO_PKG_VERSION")))
+            .user_agent(concat!("prospect/", env!("CARGO_PKG_VERSION")))
             .timeout_connect(Some(Duration::from_secs(15)))
             .build()
             .into();

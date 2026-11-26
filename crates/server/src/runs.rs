@@ -1069,7 +1069,7 @@ fn send_digest(c: &Connection, user: &User, run_id: i64, total: i64) -> rusqlite
         .and_then(|u| u.theme())
         .unwrap_or_default();
     let label = if theme.label.is_empty() {
-        "Opportunity".to_string()
+        "Business".to_string()
     } else {
         theme.label
     };
@@ -1142,7 +1142,7 @@ fn build_theme(
     let hint = engine::theme_hint(&ctx, profile);
     let label = model::text::truncate(&model::text::squash(&hint.label), 40);
     let label = if label.is_empty() {
-        "Opportunity".to_string()
+        "Business".to_string()
     } else {
         label
     };

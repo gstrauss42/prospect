@@ -101,11 +101,11 @@ fn config(bases: Vec<String>, key: &str, domain: &str) -> Config {
     Config {
         api_key: Some(key.into()),
         domain: domain.into(),
-        sender: "Opportunity <hello@mg.example.com>".into(),
+        sender: "Prospect <hello@mg.example.com>".into(),
         base_urls: bases,
         outbox_dir: std::env::temp_dir().join("opportunity-mailer-unused"),
-        public_url: "https://opportunity.example.org".into(),
-        app_name: "Opportunity".into(),
+        public_url: "https://prospect.example.org".into(),
+        app_name: "Prospect".into(),
     }
 }
 
@@ -157,7 +157,7 @@ fn sends_every_kind_through_the_mailgun_mock() {
             &cfg,
             "Acme Cleaning",
             "gabriel@example.com",
-            "https://opportunity.example.org/reset?token=abc",
+            "https://prospect.example.org/reset?token=abc",
         ),
     ];
     for e in &emails {
@@ -175,7 +175,7 @@ fn sends_every_kind_through_the_mailgun_mock() {
     for (msg, e) in sent.iter().zip(&emails) {
         assert_eq!(msg["domain"], "mg.example.com");
         assert_eq!(msg["region"], "us");
-        assert_eq!(msg["from"], "Opportunity <hello@mg.example.com>");
+        assert_eq!(msg["from"], "Prospect <hello@mg.example.com>");
         assert_eq!(msg["to"], json!(["gabriel@example.com"]));
         assert_eq!(msg["subject"], e.subject.as_str());
         assert_eq!(msg["text"], e.text.as_str());
@@ -186,7 +186,7 @@ fn sends_every_kind_through_the_mailgun_mock() {
     assert_eq!(sent[1]["subject"], "2 new opportunities for Acme Cleaning");
     assert_eq!(
         sent[1]["headers"]["List-Unsubscribe"],
-        "<https://opportunity.example.org/settings>"
+        "<https://prospect.example.org/settings>"
     );
     assert_eq!(sent[1]["tags"], json!(["digest"]));
     assert_eq!(sent[2]["tags"], json!(["password-reset"]));
@@ -274,7 +274,7 @@ for part in msg.walk():
     assert not part.defects, part.defects
 assert msg["Subject"] == subject, (msg["Subject"], subject)
 assert msg["To"].addresses[0].addr_spec == to, msg["To"]
-assert msg["From"].addresses[0].display_name == "Opportunity", msg["From"]
+assert msg["From"].addresses[0].display_name == "Prospect", msg["From"]
 assert parsedate_to_datetime(msg["Date"]).year >= 2026
 assert msg.get_content_type() == "multipart/alternative"
 norm = lambda s: s.replace("\r\n", "\n").rstrip("\n")
@@ -346,7 +346,7 @@ fn outbox_emails_parse_cleanly_with_a_real_mail_parser() {
             &cfg,
             "Pâtisserie Zoë",
             "zoe@example.com",
-            "https://opportunity.example.org/reset?token=x%2By&z=1",
+            "https://prospect.example.org/reset?token=x%2By&z=1",
         ),
     ];
     for e in &emails {
@@ -358,7 +358,7 @@ fn outbox_emails_parse_cleanly_with_a_real_mail_parser() {
     }
     // A non-ASCII subject survives the encoded-word round trip too.
     let mut e = welcome(&cfg, "Pâtisserie Zoë", "zoe@example.com");
-    e.subject = "Bienvenue chez Opportunity, Zoë — c’est parti".into();
+    e.subject = "Bienvenue chez Prospect, Zoë — c’est parti".into();
     let Delivery::Outbox { path } = m.send(&e).unwrap() else {
         panic!()
     };

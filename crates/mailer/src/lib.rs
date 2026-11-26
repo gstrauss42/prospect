@@ -210,7 +210,7 @@ impl Mailer {
     pub fn new(cfg: Config) -> Mailer {
         let agent: ureq::Agent = ureq::Agent::config_builder()
             .http_status_as_error(false)
-            .user_agent(concat!("opportunity/", env!("CARGO_PKG_VERSION")))
+            .user_agent(concat!("prospect/", env!("CARGO_PKG_VERSION")))
             .timeout_connect(Some(Duration::from_secs(10)))
             .timeout_global(Some(Duration::from_secs(30)))
             .build()

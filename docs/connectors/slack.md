@@ -1,22 +1,22 @@
 # Slack connector: setup and security review
 
-This page is for the administrator who sets up Slack for Opportunity, and for the security
+This page is for the administrator who sets up Slack for Prospect, and for the security
 reviewer who has to sign it off. It says exactly what the connector reads, how "read-only" is
 enforced, and how to install it.
 
 ## In short
 
-* Each person connects their own Slack account. Opportunity then reads, with that person's own
+* Each person connects their own Slack account. Prospect then reads, with that person's own
   **user token**, recent messages that look like opportunities (an internal hackathon, a call for
   speakers, a request for an intro, an internal role, a partnership ask). It can only see what that
   person can already see in Slack.
 * It asks Slack for two read permissions and nothing else: `search:read` and `users:read`. There is
-  no bot user, and Opportunity never asks for a bot token.
+  no bot user, and Prospect never asks for a bot token.
 * It uses three Slack methods, all with HTTP GET: `auth.test`, `search.messages` and `users.info`.
   The connector code has no way to call any other method: no posting, reacting, editing, deleting,
   uploading, inviting or revoking.
 * Every reply from Slack says what the token can really do, in its `x-oauth-scopes` header.
-  Opportunity checks that header on **every call**. If the token can do anything more than read, it
+  Prospect checks that header on **every call**. If the token can do anything more than read, it
   stops before using the reply, and the connection has to be made again.
 * Message text is fetched when a search for opportunities runs, trimmed, used and then dropped. It is
   never stored. Tokens are stored encrypted and never reach the browser.
@@ -35,7 +35,7 @@ identity endpoint and can't change anything in the workspace.
 
 **Which conversations.** Slack search with a user token covers what that person can see: public
 channels, private channels they belong to, and their direct and group messages. It also follows the
-search filters the person has set in Slack. Opportunity doesn't widen that, and it can't see
+search filters the person has set in Slack. Prospect doesn't widen that, and it can't see
 anything the person can't.
 
 **How much.** One search run makes:
@@ -52,17 +52,17 @@ anything the person can't.
 
 The results are de-duplicated, ranked (by how strongly they suggest an opportunity, whether they
 mention the person or are direct messages, and how recent they are) and capped, 60 by default. The
-words come from Opportunity's list of opportunity markers; the server can pass its own. Either way
+words come from Prospect's list of opportunity markers; the server can pass its own. Either way
 they are cleaned, so that they can never become search modifiers such as `in:` or `from:`.
 
 **Where the text goes.** The trimmed messages are given to the AI model that this deployment of
-Opportunity is configured to use, which judges which ones are real opportunities for the person.
+Prospect is configured to use, which judges which ones are real opportunities for the person.
 Only the opportunities it finds are stored, with a link back to the Slack message. The model only
 ever receives text. It has no tools and can't make any request to Slack or anywhere else.
 
 **When.** Only while a search for opportunities runs, on the person's schedule or when they ask for
 one. There are no event subscriptions, no webhooks and no background polling. Slack never sends
-Opportunity anything.
+Prospect anything.
 
 ## Scopes
 
@@ -70,10 +70,10 @@ Requested (user scopes only):
 
 | Scope | Allows | Used for |
 |---|---|---|
-| `search:read` | Searching the workspace's content as the person | `search.messages` (the scope also covers file search; Opportunity doesn't use it) |
+| `search:read` | Searching the workspace's content as the person | `search.messages` (the scope also covers file search; Prospect doesn't use it) |
 | `users:read` | Viewing people in the workspace | `users.info`, for names |
 
-Opportunity doesn't request bot scopes, write scopes, or history scopes such as
+Prospect doesn't request bot scopes, write scopes, or history scopes such as
 `channels:history`. Search is enough, and those scopes would allow bulk reading.
 
 A token is refused if it carries any scope outside a short list of read-only scopes:
@@ -129,17 +129,17 @@ limits. See `crates/connectors/tests/slack.rs`.
 ### 1. Create the Slack app
 
 At <https://api.slack.com/apps>, choose **Create New App → From a manifest**, pick the workspace,
-and paste the manifest below. Replace `https://opportunity.example.com` with your Opportunity
+and paste the manifest below. Replace `https://prospect.example.com` with your Prospect
 server's `PUBLIC_URL`. In production this must be `https`. The redirect URL must be exactly
 `{PUBLIC_URL}/api/connectors/slack/callback`.
 
 ```yaml
 display_information:
-  name: Opportunity (read-only)
+  name: Prospect (read-only)
   description: Finds opportunities in Slack messages you can already see. It can only read.
 oauth_config:
   redirect_urls:
-    - https://opportunity.example.com/api/connectors/slack/callback
+    - https://prospect.example.com/api/connectors/slack/callback
   scopes:
     user:
       - search:read
@@ -160,40 +160,40 @@ Recommended settings, all under **OAuth & Permissions**:
   hours and are renewed automatically with a single-use refresh token, so a leaked access token is
   short-lived. Slack doesn't let rotation be turned off once it's on. Pasted tokens (see below) need
   an app *without* rotation.
-* **Restrict API token usage** to the public IP addresses your Opportunity server connects from.
+* **Restrict API token usage** to the public IP addresses your Prospect server connects from.
   Slack then rejects this app's tokens from anywhere else, so a stolen token is useless. In the
   manifest this is `settings.allowed_ip_address_ranges` (up to 20 addresses or CIDR ranges, IPv4
   only).
 * **Leave PKCE off.** Slack's PKCE setting is meant for desktop and mobile apps. Turning it on makes
   the app a "public client", limits refresh tokens to 30 days, and can't be undone without
-  contacting Slack support. Opportunity is a server-side app. Its sign-in code is useless without
+  contacting Slack support. Prospect is a server-side app. Its sign-in code is useless without
   the client secret, which never leaves the server, and each sign-in is tied to the person's session
   with a one-time `state` value.
 
 Keep the app internal to your workspace: don't distribute it publicly. Organisation-wide
 installation on Enterprise Grid isn't supported, so install the app on each workspace.
 
-If your workspace requires admin approval for apps, approve **Opportunity (read-only)** once. Each
-person then connects their own account from Opportunity's settings page. Slack's consent screen
+If your workspace requires admin approval for apps, approve **Prospect (read-only)** once. Each
+person then connects their own account from Prospect's settings page. Slack's consent screen
 shows them the two permissions.
 
-### 2. Configure Opportunity
+### 2. Configure Prospect
 
-From **Basic Information → App Credentials**, set these on the Opportunity server and restart it:
+From **Basic Information → App Credentials**, set these on the Prospect server and restart it:
 
 | Variable | Value |
 |---|---|
 | `SLACK_CLIENT_ID` | the app's Client ID |
 | `SLACK_CLIENT_SECRET` | the app's Client Secret. Treat it like a password: it never leaves the server and is sent to Slack only with HTTP Basic authentication |
-| `PUBLIC_URL` | the origin people use to reach Opportunity, e.g. `https://opportunity.example.com` |
+| `PUBLIC_URL` | the origin people use to reach Prospect, e.g. `https://prospect.example.com` |
 
 `SLACK_API_BASE` and `SLACK_AUTH_BASE` exist only to point the tests at the Slack stand-in. Leave
 them unset in production.
 
 ### 3. Connect
 
-Each person opens Opportunity's settings, chooses **Connect Slack**, reviews Slack's consent screen
-and allows it. Opportunity checks the granted scopes, asks `auth.test` who the token belongs to, and
+Each person opens Prospect's settings, chooses **Connect Slack**, reviews Slack's consent screen
+and allows it. Prospect checks the granted scopes, asks `auth.test` who the token belongs to, and
 shows the workspace and the person's Slack name.
 
 ## Pasting a token instead
@@ -204,22 +204,22 @@ instead of signing in. No `SLACK_CLIENT_ID` is needed for this.
 1. Create an app from the same manifest, with `token_rotation_enabled: false`. A rotating token
    expires in 12 hours and can't be renewed without signing in, so it is refused.
 2. **OAuth & Permissions → Install to Workspace**, and allow.
-3. Copy the **User OAuth Token** (it starts with `xoxp-`) and paste it into Opportunity.
+3. Copy the **User OAuth Token** (it starts with `xoxp-`) and paste it into Prospect.
 
 Slack issues that token to the person who installed the app, so this works for one person per app.
 The same checks apply: the token's scopes are read from `x-oauth-scopes` and must be read-only, and
-it must have `search:read`. Opportunity refuses bot, app-level, rotating, refresh, browser-session
+it must have `search:read`. Prospect refuses bot, app-level, rotating, refresh, browser-session
 and legacy tokens, and says why. Such a token doesn't expire, so the person should remove it from
 Slack when they're done (see below).
 
 ## Disconnecting and revoking
 
-* **In Opportunity:** disconnecting deletes the stored token.
+* **In Prospect:** disconnecting deletes the stored token.
 * **In Slack:** a person can remove their own authorization from the app's page in the workspace's
   app management (`https://<workspace>.slack.com/apps/manage`). An admin can remove the app for the
   whole workspace there, which revokes all of its tokens.
 
-Opportunity never calls Slack's `auth.revoke`. That method changes state, so it is outside the
+Prospect never calls Slack's `auth.revoke`. That method changes state, so it is outside the
 read-only allow-list by design. To invalidate a token at Slack immediately, revoke it in Slack as
 above.
 
@@ -230,7 +230,7 @@ above.
 | "This connection could do more than read (chat:write), so it wasn't used." | The token has a scope that isn't read-only. Slack's scopes add up: a token keeps every scope the person ever approved for the app | Remove anything but the two user scopes from the app. The person removes the app from their Slack account, then connects again |
 | "Slack refused this server's app settings (bad_client_secret / bad_redirect_uri …)" | The server's credentials or redirect URL don't match the Slack app | Check `SLACK_CLIENT_ID`, `SLACK_CLIENT_SECRET` and that the app's redirect URL is exactly `{PUBLIC_URL}/api/connectors/slack/callback` |
 | "The connection was rejected; please reconnect (… token_revoked / token_expired / invalid_auth)" | The token was revoked or the app removed, it expired, or it was used from an IP address outside the allowed ranges | Reconnect. If IP restriction is on, check the server's outgoing IP address |
-| "Slack didn't report what this token is allowed to do (no x-oauth-scopes header)" | Something between Opportunity and Slack strips response headers | Let Opportunity reach `slack.com` without a header-stripping proxy |
+| "Slack didn't report what this token is allowed to do (no x-oauth-scopes header)" | Something between Prospect and Slack strips response headers | Let Prospect reach `slack.com` without a header-stripping proxy |
 | "Rate limited; try again in … s" | Slack's limit for `search.messages` (about 20 calls per minute per workspace, shared by everyone using the app) was reached before anything was found. If some searches had already worked, their results are used instead | Nothing; the next run will pick up |
 
 ## Known limits

@@ -19,7 +19,7 @@
 //!   only through the API gateway, so the site's cloud id is read from `{site}/_edge/tenant_info`
 //!   and the gateway is tried first; a classic token works on `{site}/wiki/rest/api/…`, which is
 //!   tried next. Atlassian doesn't reveal a token's scopes, so [`Credential::scopes`] stays empty
-//!   and the connection is "app"-enforced: only Opportunity's own layers (the gateway's GET-only
+//!   and the connection is "app"-enforced: only Prospect's own layers (the gateway's GET-only
 //!   allow-list, no AI tools) stand between it and a write.
 //!
 //! Reads (GET only, the exact paths in [`POLICY`]): `oauth/token/accessible-resources` (which
@@ -725,7 +725,7 @@ fn pick_site(reply: &Value, want: Option<&str>) -> Result<Site, Error> {
         None => {
             if sites.is_empty() {
                 return Err(Error::Unauthorized(
-                    "no Confluence site was shared with Opportunity; connect again and choose your Confluence site".into(),
+                    "no Confluence site was shared with Prospect; connect again and choose your Confluence site".into(),
                 ));
             }
             let at = sites.iter().position(|(search, _)| *search).unwrap_or(0);

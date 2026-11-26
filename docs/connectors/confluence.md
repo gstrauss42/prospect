@@ -1,12 +1,12 @@
 # Confluence connector: setup and security
 
-This page is for the administrator who connects Opportunity to Confluence Cloud, and for the
+This page is for the administrator who connects Prospect to Confluence Cloud, and for the
 security reviewer who has to approve it. It covers what the connector reads, how it is kept
 read-only, and how to set it up.
 
 ## Summary
 
-Opportunity can search a person's Confluence Cloud for opportunities in their own work context:
+Prospect can search a person's Confluence Cloud for opportunities in their own work context:
 internal calls for ideas, hackathons, mentoring schemes, open roles, calls for speakers, funding
 rounds, and strategy pages that show where the company is heading.
 
@@ -24,9 +24,9 @@ memory for the length of a run and stores none of them.
 
 There are two ways to connect. **OAuth 2.0 (3LO)** is recommended, and all four layers apply.
 **A pasted API token** is a fallback with a weaker guarantee: Atlassian doesn't reveal what an API
-token can do, so only Opportunity's own enforcement (layers 3 and 4) applies.
+token can do, so only Prospect's own enforcement (layers 3 and 4) applies.
 
-## What Opportunity reads
+## What Prospect reads
 
 Every request the connector can make is in this table. Nothing else is permitted.
 
@@ -81,7 +81,7 @@ names, labels, restrictions or permissions. The search asks for no expansions.
 
 ### With OAuth 2.0 (all four layers)
 
-**1. The credential can't write.** Opportunity requests exactly these scopes:
+**1. The credential can't write.** Prospect requests exactly these scopes:
 
 | Scope | Why it's needed |
 |---|---|
@@ -91,7 +91,7 @@ names, labels, restrictions or permissions. The search asks for no expansions.
 | `read:confluence-user` | Read the connected person's own profile (`user/current`) to show who is connected. |
 | `offline_access` | Get a refresh token, so that the person doesn't have to sign in again every hour. |
 
-Every one of these is read-only. Opportunity never requests `write:confluence-content`,
+Every one of these is read-only. Prospect never requests `write:confluence-content`,
 `write:confluence-space`, `write:confluence-file`, `write:confluence-props`,
 `manage:confluence-configuration`, any granular `write:…` or `delete:…` scope, or a scope from
 another product. Atlassian only lets an app request scopes that its administrator added to the app
@@ -100,20 +100,20 @@ Atlassian cannot grant anything else to it.
 
 **2. What was granted is checked, every time.**
 
-* **When connecting and on every refresh:** Opportunity reads the `scope` field of the token
+* **When connecting and on every refresh:** Prospect reads the `scope` field of the token
   reply. Atlassian rotates refresh tokens, so every refresh issues a new token, and each new token
   is checked.
-* **On every check and before every search:** Opportunity also reads the scopes Atlassian lists
+* **On every check and before every search:** Prospect also reads the scopes Atlassian lists
   for each site in `accessible-resources`.
 
-Each scope must be on Opportunity's read-only allow-list, and it must also pass a hard-coded
+Each scope must be on Prospect's read-only allow-list, and it must also pass a hard-coded
 deny-list of write markers (`write`, `manage`, `delete`, `admin`, `create`, `update`, `edit` and
 others). One unknown or write-capable scope is enough to refuse the token: the connection isn't
 saved (or stops being used), and the person is asked to reconnect with read-only access. A token
 reply that doesn't say which scopes it granted is refused too, because it can't be checked.
 
 **3. There is no code path that writes.** The connector reaches Confluence data only through
-Opportunity's gateway, which:
+Prospect's gateway, which:
 
 * sends HTTP `GET` only. No other method exists in it, and method-override headers
   (`X-HTTP-Method-Override` and similar) are refused;
@@ -149,29 +149,29 @@ The connector also defends itself against bad input:
 
 ### With an API token (layers 3 and 4 only)
 
-Atlassian doesn't reveal which scopes an API token has, so Opportunity cannot check that a token is
-read-only. **For API-token connections, only Opportunity's own enforcement applies.** That is the
-GET-only gateway with its allow-list (layer 3) and the AI without tools (layer 4). Opportunity
+Atlassian doesn't reveal which scopes an API token has, so Prospect cannot check that a token is
+read-only. **For API-token connections, only Prospect's own enforcement applies.** That is the
+GET-only gateway with its allow-list (layer 3) and the AI without tools (layer 4). Prospect
 labels these connections "app-enforced" (as opposed to "provider-enforced").
 
 What this means in practice:
 
-* Opportunity still never writes: the gateway has no way to.
+* Prospect still never writes: the gateway has no way to.
 * The token itself may be able to write. A *classic* (unscoped) API token carries all of the
   person's Confluence permissions, including editing and deleting. If such a token leaked from
-  anywhere, it could be used to write. Opportunity stores it encrypted and never shows it again,
-  but the token's own power is outside Opportunity's control.
+  anywhere, it could be used to write. Prospect stores it encrypted and never shows it again,
+  but the token's own power is outside Prospect's control.
 * **We recommend a scoped API token with read scopes only** (see below), with the shortest expiry
   that is practical. Prefer OAuth whenever the organisation can create an OAuth app.
 
 ## Setting up OAuth 2.0 (3LO) (recommended)
 
-One OAuth app serves everyone in the organisation who uses Opportunity. You'll need an Atlassian
-account and the address people use to reach Opportunity (`PUBLIC_URL`).
+One OAuth app serves everyone in the organisation who uses Prospect. You'll need an Atlassian
+account and the address people use to reach Prospect (`PUBLIC_URL`).
 
 1. Open the Atlassian developer console at <https://developer.atlassian.com/console/myapps/>, and
    choose **Create → OAuth 2.0 integration**. Name it so people recognise it on the consent screen
-   (for example "Opportunity"), and accept the developer terms.
+   (for example "Prospect"), and accept the developer terms.
 2. **Permissions:** next to **Confluence API**, choose **Add**, then **Configure**. Under the
    classic scopes, add exactly these four and nothing else:
    * `search:confluence`
@@ -180,39 +180,39 @@ account and the address people use to reach Opportunity (`PUBLIC_URL`).
    * `read:confluence-user`
 
    Don't add any write scope, granular scope, or other API (Jira and so on). `offline_access` isn't
-   configured here: Opportunity asks for it when a person connects.
+   configured here: Prospect asks for it when a person connects.
 3. **Authorization:** next to **OAuth 2.0 (3LO)**, choose **Configure** and set the callback URL to:
 
    ```
    {PUBLIC_URL}/api/connectors/confluence/callback
    ```
 
-   For example `https://opportunity.example.com/api/connectors/confluence/callback`. It must match
+   For example `https://prospect.example.com/api/connectors/confluence/callback`. It must match
    exactly, including `https`.
 4. **Distribution:** a new app is private, so only you can use it. To let colleagues connect,
    enable sharing. Atlassian then warns people that the app "has not yet been reviewed by
    Atlassian". That is expected for an organisation's own integration. If Atlassian asks about
-   personal data: Opportunity stores, per connection, the site and the person's display name. It
+   personal data: Prospect stores, per connection, the site and the person's display name. It
    stores no page content.
-5. **Settings:** copy the client ID and secret. Give them to the Opportunity server as
+5. **Settings:** copy the client ID and secret. Give them to the Prospect server as
    environment variables, and restart it:
 
    ```
    ATLASSIAN_CLIENT_ID=...
    ATLASSIAN_CLIENT_SECRET=...
-   PUBLIC_URL=https://opportunity.example.com
+   PUBLIC_URL=https://prospect.example.com
    ```
 
    Keep the secret like a password. It never leaves the server.
 
-Use an app dedicated to Opportunity. Don't reuse an app that has other scopes: Opportunity refuses
+Use an app dedicated to Prospect. Don't reuse an app that has other scopes: Prospect refuses
 any token that carries a scope outside its read-only list, including scopes for other Atlassian
 products.
 
 ### What people see
 
 When a person connects, Atlassian's consent screen lists the read permissions above and asks them
-to choose their site. Back in Opportunity, the connection shows the site and their name, and it is
+to choose their site. Back in Prospect, the connection shows the site and their name, and it is
 marked "provider-enforced".
 
 Atlassian doesn't support PKCE for apps made in the developer console. The sign-in is protected
@@ -224,13 +224,13 @@ instead by:
 
 ### Revoking access
 
-* **The person** can disconnect in Opportunity, which deletes the stored tokens. They can also
+* **The person** can disconnect in Prospect, which deletes the stored tokens. They can also
   revoke the app in their Atlassian account under **Connected apps**
   (<https://id.atlassian.com/manage-profile/apps>).
 * **An administrator** can remove the app from the site. Atlassian doesn't let administrators
   revoke one user's access to an app individually.
 * **Automatically:** refresh tokens expire after 90 days without use, and when the person changes
-  their Atlassian password. Opportunity then asks them to reconnect.
+  their Atlassian password. Prospect then asks them to reconnect.
 
 ## The API-token alternative
 
@@ -242,14 +242,14 @@ described above.
    365 days; shorter is better), choose **Confluence**, and select read scopes only:
    `search:confluence` and `read:confluence-user`, optionally with
    `read:confluence-content.summary` and `read:confluence-space.summary`. If only granular scopes
-   are offered, `read:content-details:confluence` covers both endpoints Opportunity uses. Never
+   are offered, `read:content-details:confluence` covers both endpoints Prospect uses. Never
    select a `write:`, `delete:` or `manage:` scope.
-3. In Opportunity, enter:
+3. In Prospect, enter:
    * the site, for example `https://your-company.atlassian.net`;
    * the email address of the Atlassian account; and
    * the token.
 
-How Opportunity uses the token:
+How Prospect uses the token:
 
 * **Site check.** The site must be `https://<name>.atlassian.net`. Plain `http`, other domains,
   extra subdomains, ports, paths, queries and embedded credentials are refused before anything is
@@ -257,10 +257,10 @@ How Opportunity uses the token:
 * **Authentication.** The token is sent with HTTP basic authentication (email and token), over
   HTTPS only.
 * **Choosing the API.** Atlassian accepts scoped tokens only through its API gateway
-  (`https://api.atlassian.com/ex/confluence/<cloud id>`). So Opportunity reads the site's public
+  (`https://api.atlassian.com/ex/confluence/<cloud id>`). So Prospect reads the site's public
   cloud id from `https://<site>/_edge/tenant_info` and tries the gateway first. A classic token is
   then used on the site's own API (`https://<site>/wiki/rest/api/…`).
-* **Identity check.** Before each run, Opportunity checks who the token signs in as. Confluence
+* **Identity check.** Before each run, Prospect checks who the token signs in as. Confluence
   can answer a failed sign-in as an anonymous visitor; that answer is treated as a refusal, never
   as a working connection.
 
@@ -282,30 +282,30 @@ The log never contains page content, tokens, codes or query values.
 
 ## Limits and failures
 
-* **Rate limits:** when Atlassian answers 429, Opportunity reports how long to wait (from
+* **Rate limits:** when Atlassian answers 429, Prospect reports how long to wait (from
   `Retry-After`) and tries again later. If a later page of results fails, the run keeps what it
   already found. Atlassian's points-based quotas for OAuth apps apply; a run uses 2 to 6
   requests.
 * **Rejected tokens:** a rejected access token is refreshed. A rejected refresh token, or a token
-  that gained a write scope, makes Opportunity stop and ask the person to reconnect.
+  that gained a write scope, makes Prospect stop and ask the person to reconnect.
 
 ## Known limitations
 
 * **Several sites.** If a person has granted the app access to several Confluence sites,
-  Opportunity uses the one recorded for the connection. Before one is recorded, it uses the first
+  Prospect uses the one recorded for the connection. Before one is recorded, it uses the first
   site with Confluence search that Atlassian lists. There is no site picker yet.
 * **Unverified Atlassian behaviour.** Two API-token details rest on Atlassian's documentation and
   community reports, not on a live site: `/_edge/tenant_info` is not part of Atlassian's official
   API, and we assume classic tokens are refused at the gateway, so they fall back to the site's API.
   If tenant_info can't be read, classic tokens still work, but scoped tokens can't be used.
-* **No author names.** Author names aren't fetched (see "What Opportunity reads").
+* **No author names.** Author names aren't fetched (see "What Prospect reads").
 
 ## Reference
 
 | Setting | Meaning |
 |---|---|
 | `ATLASSIAN_CLIENT_ID`, `ATLASSIAN_CLIENT_SECRET` | The OAuth app (both required to offer OAuth). |
-| `PUBLIC_URL` | Where people reach Opportunity. The callback is `{PUBLIC_URL}/api/connectors/confluence/callback`. |
+| `PUBLIC_URL` | Where people reach Prospect. The callback is `{PUBLIC_URL}/api/connectors/confluence/callback`. |
 | `ATLASSIAN_AUTH_BASE`, `ATLASSIAN_API_BASE`, `CONFLUENCE_SITE_BASES` | Test overrides only (the mock server). Only https, or http on the local machine, is accepted. |
 
 Atlassian documentation:

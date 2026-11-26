@@ -125,8 +125,8 @@ fn live_config(bases: Vec<String>) -> Config {
         sender: "hello@mg.example.com".into(),
         base_urls: bases,
         outbox_dir: std::env::temp_dir().join("opportunity-mailer-unused"),
-        public_url: "https://opportunity.example.org".into(),
-        app_name: "Opportunity".into(),
+        public_url: "https://prospect.example.org".into(),
+        app_name: "Prospect".into(),
     }
 }
 
@@ -239,7 +239,7 @@ fn mailgun_request_is_formed_like_the_api_expects() {
     );
     assert_eq!(
         seen.field("from").as_deref(),
-        Some("Opportunity <hello@mg.example.com>")
+        Some("Prospect <hello@mg.example.com>")
     );
     assert_eq!(seen.field("to").as_deref(), Some("jane@example.com"));
     assert_eq!(
@@ -252,17 +252,17 @@ fn mailgun_request_is_formed_like_the_api_expects() {
     assert_eq!(seen.field("o:tracking-clicks").as_deref(), Some("no"));
     assert_eq!(
         seen.field("h:List-Unsubscribe").as_deref(),
-        Some("<https://opportunity.example.org/settings>")
+        Some("<https://prospect.example.org/settings>")
     );
     // A named sender is used as given.
     let (base2, rx2) = serve(vec![(200, QUEUED)]);
     let mut cfg = live_config(vec![base2]);
-    cfg.sender = "Opportunity Digest <digest@mg.example.com>".into();
+    cfg.sender = "Prospect Digest <digest@mg.example.com>".into();
     Mailer::new(cfg).send(&simple_email()).unwrap();
     let seen = rx2.recv().unwrap();
     assert_eq!(
         seen.field("from").as_deref(),
-        Some("Opportunity Digest <digest@mg.example.com>")
+        Some("Prospect Digest <digest@mg.example.com>")
     );
     assert_eq!(
         seen.field("h:List-Unsubscribe"),
@@ -381,8 +381,8 @@ fn outbox_config(dir: &Path) -> Config {
         sender: String::new(),
         base_urls: vec![MAILGUN_US.into(), MAILGUN_EU.into()],
         outbox_dir: dir.to_path_buf(),
-        public_url: "https://opportunity.example.org".into(),
-        app_name: "Opportunity".into(),
+        public_url: "https://prospect.example.org".into(),
+        app_name: "Prospect".into(),
     }
 }
 
@@ -451,15 +451,15 @@ fn outbox_writes_a_real_eml_and_an_html_preview() {
     let eml = std::fs::read_to_string(&path).unwrap();
     let (head, body) = eml.split_once("\r\n\r\n").unwrap();
     assert!(
-        head.contains("\r\nFrom: Opportunity <no-reply@opportunity.example.org>\r\n"),
+        head.contains("\r\nFrom: Prospect <no-reply@prospect.example.org>\r\n"),
         "{head}"
     );
     assert!(head.contains("\r\nTo: zoe@example.com\r\n"));
     assert!(head.contains("Subject: A new opportunity for Acme Cleaning\r\n"));
     assert!(head.contains("MIME-Version: 1.0"));
     assert!(head.contains("X-Mailgun-Tag: digest"));
-    assert!(head.contains("List-Unsubscribe: <https://opportunity.example.org/settings>"));
-    assert!(head.contains("Message-ID: <") && head.contains("@opportunity.example.org>"));
+    assert!(head.contains("List-Unsubscribe: <https://prospect.example.org/settings>"));
+    assert!(head.contains("Message-ID: <") && head.contains("@prospect.example.org>"));
     assert!(head.starts_with("Date: "));
     assert!(head.contains("multipart/alternative"));
     let boundary = head
@@ -549,8 +549,5 @@ fn helpers() {
     );
     assert_eq!(mailgun_message(""), "no details");
     let cfg = outbox_config(Path::new("/tmp"));
-    assert_eq!(
-        cfg.settings_url(),
-        "https://opportunity.example.org/settings"
-    );
+    assert_eq!(cfg.settings_url(), "https://prospect.example.org/settings");
 }

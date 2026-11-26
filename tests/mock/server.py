@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One mock for every upstream Opportunity talks to, so tests never spend real money.
+"""One mock for every upstream Prospect talks to, so tests never spend real money.
 
     python3 tests/mock/server.py --port 9911
 
@@ -98,7 +98,7 @@ def take_failure(path):
 
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
-    server_version = "OpportunityMock/1"
+    server_version = "ProspectMock/1"
 
     def log_message(self, fmt, *args):  # quiet unless --verbose
         if self.server.verbose:

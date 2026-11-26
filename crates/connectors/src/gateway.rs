@@ -70,7 +70,7 @@ pub(crate) fn agent(timeout: Duration) -> ureq::Agent {
         .max_redirects(0)
         .timeout_global(Some(timeout))
         .user_agent(concat!(
-            "Opportunity-Connector/",
+            "Prospect-Connector/",
             env!("CARGO_PKG_VERSION"),
             " (read-only)"
         ))

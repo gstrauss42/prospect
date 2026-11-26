@@ -61,9 +61,9 @@ impl Default for Config {
             openverse_url: "https://api.openverse.org/v1".into(),
             commons_api_url: "https://commons.wikimedia.org/w/api.php".into(),
             user_agent: concat!(
-                "OpportunityApp/",
+                "ProspectApp/",
                 env!("CARGO_PKG_VERSION"),
-                " (self-hosted opportunity finder)"
+                " (self-hosted business intelligence)"
             )
             .into(),
             timeout: Duration::from_secs(25),
@@ -97,7 +97,7 @@ impl Config {
                 && !public.contains(char::is_whitespace)
             {
                 c.user_agent = format!(
-                    "OpportunityApp/{} (+{public}; self-hosted opportunity finder)",
+                    "ProspectApp/{} (+{public}; self-hosted business intelligence)",
                     env!("CARGO_PKG_VERSION")
                 );
             }

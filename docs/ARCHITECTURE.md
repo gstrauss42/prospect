@@ -43,7 +43,7 @@ the HTTP contract is the "BUSINESS EDITION" section of [API.md](API.md)):
 
 ```
 Cargo.toml              workspace; one place for every dependency
-crates/model            shared types (Profile, Opportunity, ThemeHint, Progress, Frequency…),
+crates/model            shared types (Profile, Prospect, ThemeHint, Progress, Frequency…),
                         taxonomy, date/URL/text helpers. serde only.
 crates/deepseek         DeepSeek v1 client: chat (JSON, thinking, vision), Search API, Fetch API,
                         balance; retries; usage + cost accounting. ureq.
@@ -74,7 +74,7 @@ One process:
   execute them (discovery, research, theme). A run never blocks HTTP.
 * **Scheduler**: one thread, wakes every 30 s, enqueues discovery for users whose `next_run_at`
   has passed, sweeps expired sessions and reset tokens.
-* **SQLite** (rusqlite, bundled): `DATA_DIR/opportunity.db`, WAL mode, `busy_timeout` 5 s,
+* **SQLite** (rusqlite, bundled): `DATA_DIR/prospect.db`, WAL mode, `busy_timeout` 5 s,
   `foreign_keys=ON`. One connection per thread (thread-local), opened lazily.
 * **Shutdown**: on SIGINT/SIGTERM (or stdin EOF is not used), stop accepting, set the engine's
   `cancel` flag, give runs a few seconds, mark unfinished runs `queued` again so they resume on
@@ -117,7 +117,7 @@ runs(
 opportunities(
   id INTEGER PRIMARY KEY, user_id → users ON DELETE CASCADE,
   url_key TEXT NOT NULL,     -- model::links::normalize_url(url)
-  data_json TEXT NOT NULL,   -- model::Opportunity as last returned by the engine
+  data_json TEXT NOT NULL,   -- model::Prospect as last returned by the engine
   score INTEGER NOT NULL, category TEXT NOT NULL, deadline TEXT,
   status TEXT NOT NULL DEFAULT 'active', -- active | saved | dismissed | expired
   vote INTEGER NOT NULL DEFAULT 0,       -- -1 | 0 | 1
@@ -188,7 +188,7 @@ human messages — they are the loading screen's live feed.
    in parallel (truncate each to ~8–10k chars) and confirm each is real, open as of today and as
    described; fix deadline/value/details from the page; drop those that fail. Pages that can't be
    fetched keep their unverified pick (verified = false).
-6. **Rank and return**: final score, sanitized via `Opportunity::sanitized(today)`, unique by key,
+6. **Rank and return**: final score, sanitized via `Prospect::sanitized(today)`, unique by key,
    at most `max_results`, best first.
 
 Typical cost: ~14 searches ($0.0105) + ~8 fetches ($0.006) + ~40–70k tokens ($0.01–0.03).

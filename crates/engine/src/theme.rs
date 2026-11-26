@@ -638,7 +638,7 @@ pub fn fallback_theme(profile: &Profile) -> ThemeHint {
                 .first()
                 .map(|i| short_label(i))
                 .filter(|l| !l.is_empty())
-                .unwrap_or_else(|| "Opportunity".into());
+                .unwrap_or_else(|| "Business".into());
             ThemeHint {
                 label,
                 image_queries: DEFAULT_QUERIES.iter().map(|q| q.to_string()).collect(),
@@ -891,7 +891,7 @@ mod tests {
         let unknown = fallback_theme(&p("", &["origami boats"]));
         assert_eq!(unknown.label, "Origami Boats");
         assert_eq!(unknown.accent, DEFAULT_ACCENT);
-        assert_eq!(fallback_theme(&Profile::default()).label, "Opportunity");
+        assert_eq!(fallback_theme(&Profile::default()).label, "Business");
         for t in [
             fallback_theme(&Profile::default()),
             fallback_theme(&p("Chef", &[])),

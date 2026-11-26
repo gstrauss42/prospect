@@ -5,7 +5,7 @@
 ```bash
 source ~/.cargo/env                  # Rust stable (rustup, installed under ~/.cargo)
 cargo test --workspace               # every unit test, no network
-cargo build --release                # target/release/opportunity
+cargo build --release                # target/release/prospect
 python3 tests/mock/server.py --port 9911   # mock upstreams for local runs and tests
 ```
 

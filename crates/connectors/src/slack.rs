@@ -13,7 +13,7 @@
 //! * **No PKCE.** Slack accepts PKCE only from apps that opt in. Opting in marks the app as a
 //!   *public* client, limits its refresh tokens to 30 days, and can't be undone without Slack
 //!   support. Apps that haven't opted in may not send PKCE arguments (`pkce_not_allowed`).
-//!   Opportunity is a confidential, server-side client. The code is useless without the client
+//!   Prospect is a confidential, server-side client. The code is useless without the client
 //!   secret, which never leaves the server, and the server binds each sign-in to the person's
 //!   session with `state`. So the verifier the facade generates is deliberately not sent.
 //! * **Token rotation** is optional and recommended. When it is on, the token is `xoxe.xoxp-…`. It
@@ -152,7 +152,7 @@ const SEARCH_ORDER: &[&str] = &[
 /// Scopes of legacy all-access tokens (custom-integration "API tokens", legacy bots).
 const LEGACY_SCOPES: &[&str] = &["identify", "read", "post", "client", "bot", "admin"];
 
-const BOT_TOKEN: &str = "That's a Slack bot token (xoxb-…). Opportunity reads Slack as you, with a user token (xoxp-…), so it only ever sees what you can see. Connect with Slack, or paste a user token.";
+const BOT_TOKEN: &str = "That's a Slack bot token (xoxb-…). Prospect reads Slack as you, with a user token (xoxp-…), so it only ever sees what you can see. Connect with Slack, or paste a user token.";
 const APP_TOKEN: &str = "That's a Slack app-level token (xapp-…), which can't read messages. Connect with Slack, or paste a user token (xoxp-…).";
 const ROTATING_TOKEN: &str = "That's a rotating Slack token (xoxe.…). It expires within 12 hours and can only be renewed by signing in. Connect with Slack instead, or paste a user token that doesn't rotate (xoxp-…).";
 const REFRESH_TOKEN: &str = "That's a Slack refresh token (xoxe-…), not an access token. Connect with Slack, or paste a user token (xoxp-…).";

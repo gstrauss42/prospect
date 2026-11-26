@@ -86,7 +86,7 @@ impl Env {
         let mock = format!("http://127.0.0.1:{}", self.mock_port);
         let log_path = self.dir.join(format!("server-{}.log", self.starts));
         let log = std::fs::File::create(&log_path).unwrap();
-        let mut cmd = Command::new(env!("CARGO_BIN_EXE_opportunity"));
+        let mut cmd = Command::new(env!("CARGO_BIN_EXE_prospect"));
         cmd.env_clear()
             .current_dir(&self.dir)
             .env("ADDR", "127.0.0.1:0")
@@ -163,7 +163,7 @@ impl Env {
     }
 
     pub fn db(&self) -> rusqlite::Connection {
-        let c = rusqlite::Connection::open(self.dir.join("data/opportunity.db")).unwrap();
+        let c = rusqlite::Connection::open(self.dir.join("data/prospect.db")).unwrap();
         c.busy_timeout(Duration::from_secs(5)).unwrap();
         c
     }

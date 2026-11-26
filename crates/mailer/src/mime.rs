@@ -314,15 +314,15 @@ mod tests {
     #[test]
     fn mailboxes() {
         assert_eq!(mailbox("", "a@b.co"), "a@b.co");
-        assert_eq!(mailbox("Opportunity", "a@b.co"), "Opportunity <a@b.co>");
+        assert_eq!(mailbox("Prospect", "a@b.co"), "Prospect <a@b.co>");
         assert_eq!(
             mailbox("Smith, Jane \"JJ\"", "a@b.co"),
             "\"Smith, Jane \\\"JJ\\\"\" <a@b.co>"
         );
         assert!(mailbox("Zoë", "a@b.co").starts_with("=?UTF-8?B?"));
         assert_eq!(
-            parse_mailbox("Opportunity <hello@mg.example.com>"),
-            ("Opportunity".into(), "hello@mg.example.com".into())
+            parse_mailbox("Prospect <hello@mg.example.com>"),
+            ("Prospect".into(), "hello@mg.example.com".into())
         );
         assert_eq!(
             parse_mailbox("\"Opp, Inc\" <x@y.z>"),
@@ -346,7 +346,7 @@ mod tests {
     #[test]
     fn multipart_message_structure() {
         let m = Message {
-            from: mailbox("Opportunity", "hello@example.com"),
+            from: mailbox("Prospect", "hello@example.com"),
             to: "jane@example.com".into(),
             subject: "Три новые возможности",
             text: "Hi Jane,\nline two",
@@ -358,7 +358,7 @@ mod tests {
         let eml = build(&m);
         let (head, body) = eml.split_once("\r\n\r\n").unwrap();
         assert!(
-            head.contains("\r\nFrom: Opportunity <hello@example.com>\r\nTo: jane@example.com\r\n")
+            head.contains("\r\nFrom: Prospect <hello@example.com>\r\nTo: jane@example.com\r\n")
         );
         assert!(head.contains("Subject: =?UTF-8?B?"));
         assert!(head.contains("MIME-Version: 1.0"));

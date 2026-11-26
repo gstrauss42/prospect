@@ -1,12 +1,12 @@
 [package]
 name = "server"
-description = "The Opportunity web server: accounts, profiles, opportunities API, background runs and the scheduler"
+description = "The Prospect web server: accounts, profiles, opportunities API, background runs and the scheduler"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true
 
 [[bin]]
-name = "opportunity"
+name = "prospect"
 path = "src/main.rs"
 
 [dependencies]

@@ -7,7 +7,7 @@ exact fields.
 
 ## BUSINESS EDITION — authoritative; overrides anything below that conflicts
 
-Opportunity is **business intelligence for a business**. One account = one business. There are no
+Prospect is **business intelligence for a business**. One account = one business. There are no
 individuals, no members, no roles: you sign in to the business account and everything is about the
 business. Onboarding is the business name + website; research builds the profile and the sourced
 intelligence dossier (`model::Intel`, the tabs); opportunities are found from that truth.
@@ -37,7 +37,7 @@ and never shows placeholders for empty ones.
 🔒 `POST /api/intel/refresh` `{}` → 202 `{ "run": Run }` (kind `research`; re-researches the business
 and replaces the intel; fills profile fields only where empty). 3 per day.
 
-Opportunity categories are the business focus areas in `/api/meta.opportunity_types` (sales, partners,
+Prospect categories are the business focus areas in `/api/meta.opportunity_types` (sales, partners,
 funding, regulation, market, visibility, talent, operations, other). Items may have `source` set to a
 connector ("slack", "microsoft", "confluence") — internal opportunities, linked to the item in that tool.
 
@@ -64,7 +64,7 @@ uses DeepSeek's Search API.
       "mode": "token", "enforcement": "provider", "status": "ok", "connected_at": 1795682592, "last_used_at": null, "error": null } ] }
 ```
 `available` comes from `connectors::Connectors::availability()`. `enforcement`: `provider` (token scopes
-verified read-only) or `app` (only Opportunity's own GET-only enforcement, e.g. a Confluence API token).
+verified read-only) or `app` (only Prospect's own GET-only enforcement, e.g. a Confluence API token).
 `status`: `ok`, `needs_reconnect`, `error`.
 🔒 `POST /api/connectors/{provider}/start` `{}` → 200 `{ "url": "https://…" }` — the browser goes there
 (OAuth). State + PKCE verifier are stored server-side for 10 minutes.
@@ -144,7 +144,7 @@ connection (`connectors::FetchQuery::default()`) and passes them to the engine a
 `log` is the last ≤16 progress steps, oldest first. `summary` (when done, discover only):
 `{ "new": 5, "refreshed": 9, "expired": 2, "total": 18 }`. `error` is a human message when failed.
 
-**Item** — an opportunity on the page: every `model::Opportunity` field plus bookkeeping:
+**Item** — an opportunity on the page: every `model::Prospect` field plus bookkeeping:
 ```json
 { "id": 42, "url": "https://…", "title": "…", "organization": "…", "category": "funding",
   "summary": "…", "why": "…", "action": "…", "location": "Cape Town", "deadline": "2027-01-15",

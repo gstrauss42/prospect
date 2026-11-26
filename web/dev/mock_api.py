@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Opportunity: a development mock of the HTTP API in docs/API.md, with in-memory state.
+"""Prospect: a development mock of the HTTP API in docs/API.md, with in-memory state.
 
 It serves web/ the way the real server does (SPA fallback, ETag + no-cache, the strict CSP from
 docs/ARCHITECTURE.md) and fakes background runs on a clock:
@@ -1195,7 +1195,7 @@ def r_conn_token(ctx, provider):
             raise ApiError("validation", "That doesn't look like a Slack token. It starts with xoxp-.", "token")
         if "write" in token:
             audit(u, provider, "scope_rejected", "POST", "https://slack.com/api/auth.test", 200, "Rejected: token has chat:write")
-            raise ApiError("validation", "This token can post messages. Opportunity only accepts read-only tokens (search:read).", "token")
+            raise ApiError("validation", "This token can post messages. Prospect only accepts read-only tokens (search:read).", "token")
         conn = connect(u, provider, "token", "provider", {"name": u["business_name"], "user": "ops", "url": "https://saltandember.slack.com"})
         audit(u, provider, "token", "POST", "https://slack.com/api/auth.test", 200, "Token verified: scopes search:read, users:read, team:read", 412, 180)
     elif provider == "confluence":
@@ -1516,7 +1516,7 @@ def static(ctx):
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "OpportunityMock/0.1"
+    server_version = "ProspectMock/0.1"
     protocol_version = "HTTP/1.1"
 
     def log_message(self, fmt, *args):
@@ -1594,7 +1594,7 @@ def main():
     srv.daemon_threads = True
     srv.verbose = args.verbose
     srv.latency = args.latency
-    print(f"[mock] Opportunity mock API on http://{args.host}:{args.port} (speed x{SPEED:g})", file=sys.stderr, flush=True)
+    print(f"[mock] Prospect mock API on http://{args.host}:{args.port} (speed x{SPEED:g})", file=sys.stderr, flush=True)
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

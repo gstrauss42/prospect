@@ -1,4 +1,4 @@
-//! Shared types and small utilities for Opportunity.
+//! Shared types and small utilities for Prospect.
 //!
 //! Everything that crosses a crate boundary (the profile, a found opportunity, a theme, run
 //! progress) is defined here so the engine, the server, the mailer and the web client agree on

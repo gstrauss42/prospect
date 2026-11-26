@@ -1,7 +1,7 @@
 //! Write sample emails (welcome, digest, password reset) to an outbox folder, as `.eml` and
 //! `.html`, to look at them in a browser or mail client. Sends nothing.
 //!
-//! `cargo run -p mailer --example preview -- /tmp/opportunity-email-preview`
+//! `cargo run -p mailer --example preview -- /tmp/prospect-email-preview`
 
 use std::path::PathBuf;
 
@@ -12,7 +12,7 @@ fn main() {
     let dir = PathBuf::from(
         std::env::args()
             .nth(1)
-            .unwrap_or_else(|| "opportunity-email-preview".into()),
+            .unwrap_or_else(|| "prospect-email-preview".into()),
     );
     let cfg = Config {
         api_key: None,
@@ -20,8 +20,8 @@ fn main() {
         sender: String::new(),
         base_urls: vec![],
         outbox_dir: dir.clone(),
-        public_url: "https://opportunity.example.org".into(),
-        app_name: "Opportunity".into(),
+        public_url: "https://prospect.example.org".into(),
+        app_name: "Prospect".into(),
     };
     let m = Mailer::new(cfg.clone());
     let items = vec![
@@ -73,7 +73,7 @@ fn main() {
             &cfg,
             "Acme Cleaning",
             "gabriel@example.com",
-            "https://opportunity.example.org/reset?token=3f9c2a",
+            "https://prospect.example.org/reset?token=3f9c2a",
         ),
     ];
     for e in &emails {

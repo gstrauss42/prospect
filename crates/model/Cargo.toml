@@ -1,6 +1,6 @@
 [package]
 name = "model"
-description = "Shared types and small dependency-free utilities for Opportunity"
+description = "Shared types and small dependency-free utilities for Prospect"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true

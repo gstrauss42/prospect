@@ -101,7 +101,7 @@ fn main() {
     let mut args = std::env::args().skip(1);
     let out = PathBuf::from(
         args.next()
-            .unwrap_or_else(|| "/tmp/claude-1000/opportunity-imagery".into()),
+            .unwrap_or_else(|| "/tmp/claude-1000/prospect-imagery".into()),
     );
     let hints: Vec<ThemeHint> = {
         let given: Vec<ThemeHint> = args

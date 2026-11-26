@@ -251,7 +251,7 @@ fn footer_link(label: &str, url: &str) -> String {
     )
 }
 
-/// "Opportunity · example.com", linked when the public URL is usable.
+/// "Prospect · example.com", linked when the public URL is usable.
 fn signature(cfg: &Config) -> String {
     match http(&cfg.public_url) {
         Some(u) => format!("{} · {}", esc(&cfg.app_name), footer_link(&host(&u), &u)),
@@ -669,8 +669,8 @@ mod tests {
             sender: String::new(),
             base_urls: vec![],
             outbox_dir: PathBuf::from("/nonexistent"),
-            public_url: "https://opportunity.example.org".into(),
-            app_name: "Opportunity".into(),
+            public_url: "https://prospect.example.org".into(),
+            app_name: "Prospect".into(),
         }
     }
 
@@ -752,7 +752,7 @@ mod tests {
         assert!(e.html.contains("You&#39;re expanding your cleaning crews"));
         assert!(e.html.contains("See all 18 on your page"));
         assert!(
-            e.html.contains("https://opportunity.example.org/settings"),
+            e.html.contains("https://prospect.example.org/settings"),
             "settings link in the footer"
         );
         assert!(
@@ -780,11 +780,11 @@ mod tests {
         assert!(e.text.contains("https://example.org/best-tender"));
         assert!(
             e.text
-                .contains("See all 18 on your page: https://opportunity.example.org")
+                .contains("See all 18 on your page: https://prospect.example.org")
         );
         assert!(
             e.text
-                .contains("stop these emails: https://opportunity.example.org/settings")
+                .contains("stop these emails: https://prospect.example.org/settings")
         );
         assert!(!e.text.contains('<'), "no HTML in the text version");
     }
@@ -915,46 +915,44 @@ mod tests {
     #[test]
     fn welcome_and_reset_address_the_business() {
         let w = welcome(&cfg(), "Acme Cleaning", "ops@acme.example");
-        assert_eq!(w.subject, "Welcome to Opportunity, Acme Cleaning");
+        assert_eq!(w.subject, "Welcome to Prospect, Acme Cleaning");
         assert_eq!(w.tag, "welcome");
         assert!(
-            w.html.contains("<h1")
-                && w.html
-                    .contains("Welcome to Opportunity, Acme Cleaning</h1>")
+            w.html.contains("<h1") && w.html.contains("Welcome to Prospect, Acme Cleaning</h1>")
         );
         assert!(
             w.html
-                .contains("Thanks for setting up Opportunity for Acme Cleaning.")
+                .contains("Thanks for setting up Prospect for Acme Cleaning.")
         );
         assert!(
             w.html.contains("Set up your page")
-                && w.html.contains("href=\"https://opportunity.example.org\"")
+                && w.html.contains("href=\"https://prospect.example.org\"")
         );
-        assert!(w.text.starts_with("Welcome to Opportunity, Acme Cleaning\n\nThanks for setting up Opportunity for Acme Cleaning."));
+        assert!(w.text.starts_with("Welcome to Prospect, Acme Cleaning\n\nThanks for setting up Prospect for Acme Cleaning."));
         assert!(
             w.text
-                .contains("Set up your page: https://opportunity.example.org")
+                .contains("Set up your page: https://prospect.example.org")
         );
         assert_eq!(
             welcome(&cfg(), "  ", "ops@acme.example").subject,
-            "Welcome to Opportunity"
+            "Welcome to Prospect"
         );
         let r = password_reset(
             &cfg(),
             "Acme Cleaning",
             "ops@acme.example",
-            "https://opportunity.example.org/reset?token=abc&x=1",
+            "https://prospect.example.org/reset?token=abc&x=1",
         );
-        assert_eq!(r.subject, "Reset your Opportunity password");
+        assert_eq!(r.subject, "Reset your Prospect password");
         assert_eq!(r.tag, "password-reset");
-        assert!(r.html.contains("the Acme Cleaning account on Opportunity"));
+        assert!(r.html.contains("the Acme Cleaning account on Prospect"));
         assert!(
             r.html
-                .contains("href=\"https://opportunity.example.org/reset?token=abc&amp;x=1\"")
+                .contains("href=\"https://prospect.example.org/reset?token=abc&amp;x=1\"")
         );
         assert!(
             r.text
-                .contains("https://opportunity.example.org/reset?token=abc&x=1")
+                .contains("https://prospect.example.org/reset?token=abc&x=1")
         );
         assert!(r.text.contains("one hour"));
         for e in [&w, &r] {

@@ -39,7 +39,7 @@ wait_idle() {
 step "build (release)"
 [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 cargo build --release -p server --manifest-path "$ROOT/Cargo.toml" 2>&1 | tail -1
-BIN="$ROOT/target/release/opportunity"
+BIN="$ROOT/target/release/prospect"
 
 step "start the mock and the server"
 python3 "$ROOT/tests/mock/server.py" --port "$MOCK_PORT" >"$WORK/mock.log" 2>&1 &

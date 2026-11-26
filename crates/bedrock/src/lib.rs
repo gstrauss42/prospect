@@ -659,7 +659,7 @@ impl Http {
             .http_status_as_error(false)
             // A redirect would carry the request (and a bearer key) somewhere else; AWS never sends one.
             .max_redirects(0)
-            .user_agent(concat!("opportunity/", env!("CARGO_PKG_VERSION")))
+            .user_agent(concat!("prospect/", env!("CARGO_PKG_VERSION")))
             .timeout_connect(Some(Duration::from_secs(15)))
             .build()
             .into();
